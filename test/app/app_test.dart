@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lumeno/features/dashboard/presentation/dashboard_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:lumeno/app/app.dart';
@@ -32,6 +33,6 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.byType(DashboardPage), findsOneWidget);
   });
 }
