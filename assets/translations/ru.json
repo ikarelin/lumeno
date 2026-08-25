@@ -1,0 +1,25 @@
+{
+  "app": {
+    "name": "Lumeno"
+  },
+  "common": {
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "search": "Поиск"
+  },
+  "auth": {
+    "login": "Войти",
+    "email": "Email",
+    "password": "Пароль",
+    "forgot_password": "Забыли пароль?"
+  },
+  "dashboard": {
+    "title": "Главная",
+    "welcome": "Доброе утро, доктор"
+  },
+  "patients": {
+    "title": "Пациенты",
+    "add_patient": "Добавить пациента"
+  }
+}

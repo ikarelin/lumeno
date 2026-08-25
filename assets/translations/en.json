@@ -1,0 +1,25 @@
+{
+  "app": {
+    "name": "Lumeno"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "search": "Search"
+  },
+  "auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "forgot_password": "Forgot password?"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Good morning, Doctor"
+  },
+  "patients": {
+    "title": "Patients",
+    "add_patient": "Add patient"
+  }
+}

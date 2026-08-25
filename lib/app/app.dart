@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import 'theme/lumeno_theme.dart';
@@ -10,7 +11,11 @@ class LumenoApp extends StatelessWidget {
     return MaterialApp(
       title: 'Lumeno',
 
-      debugShowCheckedModeBanner: false,
+      locale: context.locale,
+
+      supportedLocales: context.supportedLocales,
+
+      localizationsDelegates: context.localizationDelegates,
 
       theme: LumenoTheme.light,
 
@@ -18,13 +23,7 @@ class LumenoApp extends StatelessWidget {
 
       themeMode: ThemeMode.system,
 
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            'Lumeno',
-          ),
-        ),
-      ),
+      home: Scaffold(body: Center(child: const Text('app.name').tr())),
     );
   }
 }
