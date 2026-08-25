@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lumeno/app/router/app_router.dart';
 
 import 'theme/lumeno_theme.dart';
 
@@ -8,7 +9,7 @@ class LumenoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Lumeno',
 
       locale: context.locale,
@@ -23,7 +24,7 @@ class LumenoApp extends StatelessWidget {
 
       themeMode: ThemeMode.system,
 
-      home: Scaffold(body: Center(child: const Text('app.name').tr())),
+      routerConfig: appRouter,
     );
   }
 }

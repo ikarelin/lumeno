@@ -15,19 +15,23 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('Lumeno app renders', (tester) async {
+  testWidgets('Lumeno app renders dashboard', (tester) async {
     await tester.pumpWidget(
       EasyLocalization(
         supportedLocales: const [Locale('en'), Locale('ru')],
+
         path: 'assets/translations',
+
         fallbackLocale: const Locale('en'),
+
         startLocale: const Locale('en'),
+
         child: const ProviderScope(child: LumenoApp()),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Lumeno'), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
   });
 }
