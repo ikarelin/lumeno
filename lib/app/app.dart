@@ -23,6 +23,7 @@ class LumenoApp extends StatelessWidget {
       darkTheme: LumenoTheme.dark,
 
       themeMode: ThemeMode.system,
+      //themeMode: ThemeMode.light,
 
       routerConfig: appRouter,
     );

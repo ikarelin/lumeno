@@ -7,11 +7,9 @@ abstract final class LumenoTheme {
   static ThemeData get light {
     return ThemeData(
       useMaterial3: true,
-
       brightness: Brightness.light,
-
+      fontFamily: 'Inter',
       scaffoldBackgroundColor: AppColors.backgroundLight,
-
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.brand,
         brightness: Brightness.light,
@@ -19,13 +17,9 @@ abstract final class LumenoTheme {
 
       textTheme: const TextTheme(
         headlineLarge: AppTextStyles.headlineLarge,
-
         headlineMedium: AppTextStyles.headlineMedium,
-
         titleLarge: AppTextStyles.titleLarge,
-
         bodyLarge: AppTextStyles.bodyLarge,
-
         bodyMedium: AppTextStyles.bodyMedium,
       ),
     );
@@ -34,11 +28,9 @@ abstract final class LumenoTheme {
   static ThemeData get dark {
     return ThemeData(
       useMaterial3: true,
-
       brightness: Brightness.dark,
-
+      fontFamily: 'Inter',
       scaffoldBackgroundColor: AppColors.backgroundDark,
-
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.brandDark,
         brightness: Brightness.dark,
@@ -46,13 +38,9 @@ abstract final class LumenoTheme {
 
       textTheme: const TextTheme(
         headlineLarge: AppTextStyles.headlineLarge,
-
         headlineMedium: AppTextStyles.headlineMedium,
-
         titleLarge: AppTextStyles.titleLarge,
-
         bodyLarge: AppTextStyles.bodyLarge,
-
         bodyMedium: AppTextStyles.bodyMedium,
       ),
     );
