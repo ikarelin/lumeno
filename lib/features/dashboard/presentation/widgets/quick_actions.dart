@@ -36,17 +36,8 @@ class QuickActions extends StatelessWidget {
               width: itemWidth,
               child: _QuickActionTile(
                 icon: Icons.calendar_month_outlined,
-                title: 'New appointment',
+                title: 'New visit',
                 subtitle: 'Schedule a patient visit',
-                onTap: () {},
-              ),
-            ),
-            SizedBox(
-              width: itemWidth,
-              child: _QuickActionTile(
-                icon: Icons.search_outlined,
-                title: 'Search patient',
-                subtitle: 'Open an existing patient',
                 onTap: () {},
               ),
             ),
