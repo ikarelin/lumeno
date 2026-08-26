@@ -1,6 +1,25 @@
 {
   "dashboard": {
-    "title": "Главная"
+    "title": "Главная",
+    "greeting": "Доброе утро, {name}",
+    "todayAppointments": "Сегодняшние приёмы",
+    "viewAll": "Смотреть все",
+    "quickActions": "Быстрые действия",
+    "quickActionsItems": {
+      "newPatient": {
+        "title": "Новый пациент",
+        "subtitle": "Создать карту пациента"
+      },
+      "newVisit": {
+        "title": "Новый приём",
+        "subtitle": "Запланировать визит пациента"
+      }
+    },
+    "appointmentTypes": {
+      "followUp": "Повторный приём",
+      "consultation": "Консультация",
+      "treatment": "Сеанс лечения"
+    }
   },
   "patients": {
     "title": "Пациенты"

@@ -1,7 +1,7 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shared/widgets/sidebar/app_sidebar.dart';
 import '../navigation/app_navigation_items.dart';
 
 class DesktopShell extends StatelessWidget {
@@ -14,30 +14,12 @@ class DesktopShell extends StatelessWidget {
     return Scaffold(
       body: Row(
         children: [
-          NavigationRail(
+          AppSidebar(
             selectedIndex: _calculateIndex(context),
 
             onDestinationSelected: (index) {
               context.go(AppNavigationItems.items[index].path);
             },
-
-            leading: const Padding(
-              padding: EdgeInsets.all(16),
-
-              child: Text('Lumeno'),
-            ),
-
-            destinations: AppNavigationItems.items
-                .map(
-                  (item) => NavigationRailDestination(
-                    icon: Icon(item.icon),
-
-                    selectedIcon: Icon(item.selectedIcon),
-
-                    label: Text(item.translationKey.tr()),
-                  ),
-                )
-                .toList(),
           ),
 
           Expanded(child: child),

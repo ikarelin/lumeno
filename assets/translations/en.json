@@ -1,6 +1,25 @@
 {
   "dashboard": {
-    "title": "Dashboard"
+    "title": "Dashboard",
+    "greeting": "Good morning, {name}",
+    "todayAppointments": "Today appointments",
+    "viewAll": "View all",
+    "quickActions": "Quick actions",
+    "quickActionsItems": {
+      "newPatient": {
+        "title": "New patient",
+        "subtitle": "Create a new patient card"
+      },
+      "newVisit": {
+        "title": "New visit",
+        "subtitle": "Schedule a patient visit"
+      }
+    },
+    "appointmentTypes": {
+      "followUp": "Follow-up visit",
+      "consultation": "Consultation",
+      "treatment": "Treatment session"
+    }
   },
   "patients": {
     "title": "Patients"

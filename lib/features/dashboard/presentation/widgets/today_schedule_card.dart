@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
@@ -12,30 +13,30 @@ class TodayScheduleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppCard(
+    return AppCard(
       child: Column(
         children: [
           _AppointmentTimelineItem(
             time: '09:00',
             patient: 'John Smith',
-            description: 'Follow-up visit',
+            description: 'dashboard.appointmentTypes.followUp'.tr(),
             isNext: true,
           ),
 
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
 
           _AppointmentTimelineItem(
             time: '10:30',
             patient: 'Anna Brown',
-            description: 'Consultation',
+            description: 'dashboard.appointmentTypes.consultation'.tr(),
           ),
 
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
 
           _AppointmentTimelineItem(
             time: '14:00',
             patient: 'Michael Wilson',
-            description: 'Treatment session',
+            description: 'dashboard.appointmentTypes.treatment'.tr(),
           ),
         ],
       ),

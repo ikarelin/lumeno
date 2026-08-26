@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
@@ -27,8 +28,9 @@ class QuickActions extends StatelessWidget {
               width: itemWidth,
               child: _QuickActionTile(
                 icon: Icons.person_add_alt_1_outlined,
-                title: 'New patient',
-                subtitle: 'Create a new patient card',
+                title: 'dashboard.quickActionsItems.newPatient.title'.tr(),
+                subtitle: 'dashboard.quickActionsItems.newPatient.subtitle'
+                    .tr(),
                 onTap: () {},
               ),
             ),
@@ -36,8 +38,8 @@ class QuickActions extends StatelessWidget {
               width: itemWidth,
               child: _QuickActionTile(
                 icon: Icons.calendar_month_outlined,
-                title: 'New visit',
-                subtitle: 'Schedule a patient visit',
+                title: 'dashboard.quickActionsItems.newVisit.title'.tr(),
+                subtitle: 'dashboard.quickActionsItems.newVisit.subtitle'.tr(),
                 onTap: () {},
               ),
             ),

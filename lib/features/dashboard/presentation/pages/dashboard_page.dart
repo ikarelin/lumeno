@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_spacing.dart';
@@ -11,35 +12,35 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.lg),
 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
 
             children: [
-              DashboardHeader(),
+              const DashboardHeader(),
 
-              SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
 
               AppSectionTitle(
-                title: 'Today appointments',
-                actionLabel: 'View all',
+                title: 'dashboard.todayAppointments'.tr(),
+                actionLabel: 'dashboard.viewAll'.tr(),
               ),
 
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
 
-              TodayScheduleCard(),
+              const TodayScheduleCard(),
 
-              SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
 
-              AppSectionTitle(title: 'Quick actions'),
+              AppSectionTitle(title: 'dashboard.quickActions'.tr()),
 
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
 
-              QuickActions(),
+              const QuickActions(),
             ],
           ),
         ),

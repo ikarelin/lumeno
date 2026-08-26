@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/app_avatar.dart';
@@ -9,7 +10,7 @@ class DashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -17,14 +18,14 @@ class DashboardHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Good morning, Dr. Smith',
+              'dashboard.greeting'.tr(namedArgs: const {'name': 'Dr. Smith'}),
               style: AppTextStyles.headlineMedium,
             ),
-            SizedBox(height: AppSpacing.sm),
-            Text('Wednesday, 25 August', style: AppTextStyles.bodyMedium),
+            const SizedBox(height: AppSpacing.sm),
+            const Text('Wednesday, 25 August', style: AppTextStyles.bodyMedium),
           ],
         ),
-        AppAvatar(name: 'Dr. Smith', size: AppAvatarSize.medium),
+        const AppAvatar(name: 'Dr. Smith', size: AppAvatarSize.medium),
       ],
     );
   }
