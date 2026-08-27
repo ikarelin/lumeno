@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_breakpoints.dart';
 import 'desktop_shell.dart';
 import 'mobile_shell.dart';
 
@@ -12,7 +13,7 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 900) {
+        if (constraints.maxWidth >= AppBreakpoints.desktop) {
           return DesktopShell(child: child);
         }
 

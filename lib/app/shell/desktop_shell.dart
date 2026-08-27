@@ -16,12 +16,16 @@ class DesktopShell extends StatelessWidget {
         children: [
           AppSidebar(
             selectedIndex: _calculateIndex(context),
-
             onDestinationSelected: (index) {
               context.go(AppNavigationItems.items[index].path);
             },
+            onNewPatient: () {
+              // TODO: Implement patient creation flow.
+            },
+            onNewVisit: () {
+              // TODO: Implement visit creation flow.
+            },
           ),
-
           Expanded(child: child),
         ],
       ),

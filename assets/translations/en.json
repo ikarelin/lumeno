@@ -29,5 +29,8 @@
   },
   "files": {
     "title": "Files"
+  },
+  "sidebar": {
+    "quickActions": "Quick actions"
   }
 }

@@ -29,5 +29,8 @@
   },
   "files": {
     "title": "Файлы"
+  },
+    "sidebar": {
+      "quickActions": "Быстрые действия"
+    }
   }
-}

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_breakpoints.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../shared/widgets/app_section_title.dart';
 import '../widgets/dashboard_header.dart';
@@ -12,14 +13,15 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop =
+        MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               const DashboardHeader(),
 
@@ -34,13 +36,15 @@ class DashboardPage extends StatelessWidget {
 
               const TodayScheduleCard(),
 
-              const SizedBox(height: AppSpacing.xl),
+              if (!isDesktop) ...[
+                const SizedBox(height: AppSpacing.xl),
 
-              AppSectionTitle(title: 'dashboard.quickActions'.tr()),
+                AppSectionTitle(title: 'dashboard.quickActions'.tr()),
 
-              const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
 
-              const QuickActions(),
+                const QuickActions(),
+              ],
             ],
           ),
         ),
