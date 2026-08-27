@@ -9,13 +9,13 @@ class SidebarProfile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return const Row(
       children: [
-        const AppAvatar(name: 'Dr. Smith', size: AppAvatarSize.small),
+        AppAvatar(name: 'Dr. Smith', size: AppAvatarSize.small),
 
-        const SizedBox(width: AppSpacing.sm),
+        SizedBox(width: AppSpacing.sm),
 
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Dr. Smith', style: AppTextStyles.bodyMedium),
