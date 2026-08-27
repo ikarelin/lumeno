@@ -8,8 +8,9 @@ class AppButton extends StatelessWidget {
   const AppButton._({
     required this.label,
     required this.onPressed,
+    required this.variant,
     this.icon,
-    this.variant = AppButtonVariant.primary,
+    this.fullWidth = false,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class AppButton extends StatelessWidget {
     required String label,
     required VoidCallback onPressed,
     IconData? icon,
+    bool fullWidth = false,
     Key? key,
   }) {
     return AppButton._(
@@ -24,6 +26,7 @@ class AppButton extends StatelessWidget {
       label: label,
       onPressed: onPressed,
       icon: icon,
+      fullWidth: fullWidth,
       variant: AppButtonVariant.primary,
     );
   }
@@ -32,6 +35,7 @@ class AppButton extends StatelessWidget {
     required String label,
     required VoidCallback onPressed,
     IconData? icon,
+    bool fullWidth = false,
     Key? key,
   }) {
     return AppButton._(
@@ -39,6 +43,7 @@ class AppButton extends StatelessWidget {
       label: label,
       onPressed: onPressed,
       icon: icon,
+      fullWidth: fullWidth,
       variant: AppButtonVariant.secondary,
     );
   }
@@ -47,6 +52,7 @@ class AppButton extends StatelessWidget {
     required String label,
     required VoidCallback onPressed,
     IconData? icon,
+    bool fullWidth = false,
     Key? key,
   }) {
     return AppButton._(
@@ -54,103 +60,103 @@ class AppButton extends StatelessWidget {
       label: label,
       onPressed: onPressed,
       icon: icon,
+      fullWidth: fullWidth,
       variant: AppButtonVariant.text,
     );
   }
 
   final String label;
-
   final VoidCallback onPressed;
-
   final IconData? icon;
-
+  final bool fullWidth;
   final AppButtonVariant variant;
 
   @override
   Widget build(BuildContext context) {
-    switch (variant) {
-      case AppButtonVariant.primary:
-        return _buildFilledButton(context);
+    final button = switch (variant) {
+      AppButtonVariant.primary => _buildFilledButton(),
+      AppButtonVariant.secondary => _buildOutlinedButton(),
+      AppButtonVariant.text => _buildTextButton(),
+    };
 
-      case AppButtonVariant.secondary:
-        return _buildOutlinedButton(context);
-
-      case AppButtonVariant.text:
-        return _buildTextButton(context);
-    }
-  }
-
-  Widget _buildFilledButton(BuildContext context) {
-    return FilledButton.icon(
-      onPressed: onPressed,
-
-      icon: _icon(),
-
-      label: Text(label),
-
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.sm,
-        ),
-
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-
-        textStyle: AppTextStyles.button,
-      ),
-    );
-  }
-
-  Widget _buildOutlinedButton(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-
-      icon: _icon(),
-
-      label: Text(label),
-
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.sm,
-        ),
-
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-
-        textStyle: AppTextStyles.button,
-      ),
-    );
-  }
-
-  Widget _buildTextButton(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onPressed,
-
-      icon: _icon(),
-
-      label: Text(label),
-
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-
-        textStyle: AppTextStyles.button,
-      ),
-    );
-  }
-
-  Widget _icon() {
-    if (icon == null) {
-      return const SizedBox.shrink();
+    if (!fullWidth) {
+      return button;
     }
 
-    return Icon(icon);
+    return SizedBox(width: double.infinity, child: button);
+  }
+
+  Widget _buildFilledButton() {
+    final style = FilledButton.styleFrom(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      textStyle: AppTextStyles.button,
+    );
+
+    if (icon case final icon?) {
+      return FilledButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+        style: style,
+      );
+    }
+
+    return FilledButton(onPressed: onPressed, style: style, child: Text(label));
+  }
+
+  Widget _buildOutlinedButton() {
+    final style = OutlinedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      textStyle: AppTextStyles.button,
+    );
+
+    if (icon case final icon?) {
+      return OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+        style: style,
+      );
+    }
+
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: style,
+      child: Text(label),
+    );
+  }
+
+  Widget _buildTextButton() {
+    final style = TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      textStyle: AppTextStyles.button,
+    );
+
+    if (icon case final icon?) {
+      return TextButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+        style: style,
+      );
+    }
+
+    return TextButton(onPressed: onPressed, style: style, child: Text(label));
   }
 }
 

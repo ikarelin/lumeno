@@ -32,5 +32,17 @@
   },
     "sidebar": {
       "quickActions": "Быстрые действия"
+    },
+  "onboarding": {
+    "welcome": {
+      "title": "Добро пожаловать в Lumeno",
+      "description": "Спокойное рабочее пространство для пациентов, приёмов и клинических записей.",
+      "createAccount": "Создать аккаунт",
+      "signIn": "Войти"
+    },
+    "language": {
+      "english": "English",
+      "russian": "Русский"
     }
+  }
   }

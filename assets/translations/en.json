@@ -32,5 +32,17 @@
   },
   "sidebar": {
     "quickActions": "Quick actions"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welcome to Lumeno",
+      "description": "A calm workspace for patients, visits and clinical records.",
+      "createAccount": "Create account",
+      "signIn": "Sign in"
+    },
+    "language": {
+      "english": "English",
+      "russian": "Русский"
+    }
   }
 }
