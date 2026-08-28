@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lumeno/app/theme/lumeno_theme.dart';
 import 'package:lumeno/features/auth/presentation/pages/sign_in_page.dart';
 import 'package:lumeno/features/auth/presentation/pages/sign_up_page.dart';
+import 'package:lumeno/features/onboarding/presentation/pages/clinic_setup_page.dart';
+import 'package:lumeno/features/onboarding/presentation/pages/doctor_setup_page.dart';
 import 'package:lumeno/features/onboarding/presentation/pages/region_page.dart';
 import 'package:lumeno/features/onboarding/presentation/pages/welcome_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,50 +20,21 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('Welcome -> Region -> Sign Up onboarding flow works', (
+  testWidgets('Create account and sign in onboarding flows work', (
     tester,
   ) async {
-    final router = GoRouter(
-      initialLocation: '/welcome',
-      routes: [
-        GoRoute(
-          path: '/welcome',
-          builder: (context, state) => const WelcomePage(),
-        ),
-        GoRoute(
-          path: '/region',
-          builder: (context, state) => const RegionPage(),
-        ),
-        GoRoute(
-          path: '/sign-up',
-          builder: (context, state) => const SignUpPage(),
-        ),
-        GoRoute(
-          path: '/sign-in',
-          builder: (context, state) => const SignInPage(),
-        ),
-      ],
-    );
+    final router = _buildTestRouter();
 
     addTearDown(router.dispose);
 
-    await tester.pumpWidget(
-      EasyLocalization(
-        supportedLocales: const [Locale('en'), Locale('ru')],
-        path: 'assets/translations',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        saveLocale: false,
-        child: ProviderScope(child: _TestApp(router: router)),
-      ),
-    );
+    await _pumpTestApp(tester, router: router);
 
-    await tester.pumpAndSettle();
+    // -------------------------------------------------------------------
+    // Create account flow
+    // Welcome -> Region -> Sign Up -> Doctor Setup -> Clinic Setup
+    // -------------------------------------------------------------------
 
-    // Welcome
     expect(find.byType(WelcomePage), findsOneWidget);
-    expect(find.text('Create account'), findsOneWidget);
-    expect(find.text('Sign in'), findsOneWidget);
 
     final createAccountButton = find.byType(FilledButton);
 
@@ -73,30 +46,28 @@ void main() {
     // Region
     expect(find.byType(RegionPage), findsOneWidget);
 
-    final continueButton = find.byType(FilledButton);
+    final regionContinueButton = find.byType(FilledButton);
 
-    expect(continueButton, findsOneWidget);
+    expect(regionContinueButton, findsOneWidget);
 
-    // Continue must be disabled before region selection.
-    expect(tester.widget<FilledButton>(continueButton).onPressed, isNull);
+    expect(tester.widget<FilledButton>(regionContinueButton).onPressed, isNull);
 
-    final unselectedRegionIcons = find.byIcon(Icons.circle_outlined);
+    final regionOptions = find.byIcon(Icons.circle_outlined);
 
-    expect(unselectedRegionIcons, findsNWidgets(2));
+    expect(regionOptions, findsNWidgets(2));
 
-    // Select Russia.
-    await tester.tap(unselectedRegionIcons.first);
+    await tester.tap(regionOptions.first);
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(regionContinueButton).onPressed,
+      isNotNull,
+    );
 
-    expect(tester.widget<FilledButton>(continueButton).onPressed, isNotNull);
-
-    // Region screen can be taller than the default widget-test viewport.
-    await tester.ensureVisible(continueButton);
+    await tester.ensureVisible(regionContinueButton);
     await tester.pumpAndSettle();
 
-    await tester.tap(continueButton);
+    await tester.tap(regionContinueButton);
     await tester.pumpAndSettle();
 
     // Sign Up
@@ -106,7 +77,204 @@ void main() {
       router.routeInformationProvider.value.uri.queryParameters['region'],
       'russia',
     );
+
+    final signUpFields = find.byType(TextFormField);
+
+    expect(signUpFields, findsNWidgets(3));
+
+    await tester.enterText(signUpFields.at(0), 'doctor@example.com');
+
+    await tester.enterText(signUpFields.at(1), 'password123');
+
+    await tester.enterText(signUpFields.at(2), 'password123');
+
+    final signUpButton = find.byType(FilledButton);
+
+    await tester.ensureVisible(signUpButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(signUpButton);
+    await tester.pumpAndSettle();
+
+    // Doctor Setup
+    expect(find.byType(DoctorSetupPage), findsOneWidget);
+
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['region'],
+      'russia',
+    );
+
+    final doctorFields = find.byType(TextFormField);
+
+    expect(doctorFields, findsNWidgets(2));
+
+    await tester.enterText(doctorFields.at(0), 'Alex Doctor');
+
+    await tester.enterText(doctorFields.at(1), 'Dentist');
+
+    final doctorContinueButton = find.byType(FilledButton);
+
+    await tester.ensureVisible(doctorContinueButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(doctorContinueButton);
+    await tester.pumpAndSettle();
+
+    // Clinic Setup
+    expect(find.byType(ClinicSetupPage), findsOneWidget);
+
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['region'],
+      'russia',
+    );
+
+    final clinicContinueButton = find.byType(FilledButton);
+
+    expect(clinicContinueButton, findsOneWidget);
+
+    expect(tester.widget<FilledButton>(clinicContinueButton).onPressed, isNull);
+
+    final clinicField = find.byType(TextFormField);
+
+    expect(clinicField, findsOneWidget);
+
+    await tester.enterText(clinicField, 'Some Clinic');
+
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<FilledButton>(clinicContinueButton).onPressed,
+      isNotNull,
+    );
+
+    // Clinic is optional: verify Add later path.
+    final addLaterButton = find.byType(OutlinedButton);
+
+    expect(addLaterButton, findsOneWidget);
+
+    await tester.ensureVisible(addLaterButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(addLaterButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dashboard test marker'), findsOneWidget);
+
+    // -------------------------------------------------------------------
+    // Sign in flow
+    // Welcome -> Sign In -> Dashboard
+    // -------------------------------------------------------------------
+
+    router.go('/welcome');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WelcomePage), findsOneWidget);
+
+    final signInEntryButton = find.byType(OutlinedButton);
+
+    expect(signInEntryButton, findsOneWidget);
+
+    await tester.tap(signInEntryButton);
+    await tester.pumpAndSettle();
+
+    // Sign In must not require region selection.
+    expect(find.byType(SignInPage), findsOneWidget);
+
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['region'],
+      isNull,
+    );
+
+    final signInFields = find.byType(TextFormField);
+
+    expect(signInFields, findsNWidgets(2));
+
+    await tester.enterText(signInFields.at(0), 'doctor@example.com');
+
+    await tester.enterText(signInFields.at(1), 'password123');
+
+    final signInButton = find.byType(FilledButton);
+
+    expect(signInButton, findsOneWidget);
+
+    await tester.ensureVisible(signInButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(signInButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dashboard test marker'), findsOneWidget);
   });
+}
+
+GoRouter _buildTestRouter() {
+  return GoRouter(
+    initialLocation: '/welcome',
+    routes: [
+      GoRoute(
+        path: '/welcome',
+        builder: (context, state) {
+          return const WelcomePage();
+        },
+      ),
+      GoRoute(
+        path: '/region',
+        builder: (context, state) {
+          return const RegionPage();
+        },
+      ),
+      GoRoute(
+        path: '/sign-up',
+        builder: (context, state) {
+          return const SignUpPage();
+        },
+      ),
+      GoRoute(
+        path: '/doctor-setup',
+        builder: (context, state) {
+          return const DoctorSetupPage();
+        },
+      ),
+      GoRoute(
+        path: '/clinic-setup',
+        builder: (context, state) {
+          return const ClinicSetupPage();
+        },
+      ),
+      GoRoute(
+        path: '/sign-in',
+        builder: (context, state) {
+          return const SignInPage();
+        },
+      ),
+      GoRoute(
+        path: '/dashboard',
+        builder: (context, state) {
+          return const Scaffold(
+            body: Center(child: Text('Dashboard test marker')),
+          );
+        },
+      ),
+    ],
+  );
+}
+
+Future<void> _pumpTestApp(
+  WidgetTester tester, {
+  required GoRouter router,
+}) async {
+  await tester.pumpWidget(
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('ru')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      saveLocale: false,
+      child: ProviderScope(child: _TestApp(router: router)),
+    ),
+  );
+
+  await tester.pumpAndSettle();
 }
 
 class _TestApp extends StatelessWidget {
