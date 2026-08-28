@@ -5,12 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/app_language_selector.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
   static const _contentMaxWidth = 440.0;
-  static const _logoSize = 104.0;
+  static const _logoSize = 128.0;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +24,8 @@ class WelcomePage extends StatelessWidget {
             const Positioned(
               top: AppSpacing.md,
               right: AppSpacing.lg,
-              child: _LanguageSelector(),
+              //child: _LanguageSelector(),
+              child: AppLanguageSelector(),
             ),
 
             Center(
@@ -45,11 +47,11 @@ class WelcomePage extends StatelessWidget {
 
                       const Text(
                         'Lumeno',
-                        style: AppTextStyles.headlineMedium,
+                        style: AppTextStyles.brand,
                         textAlign: TextAlign.center,
                       ),
 
-                      const SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.lg),
 
                       Text(
                         'onboarding.welcome.title'.tr(),
@@ -91,46 +93,6 @@ class WelcomePage extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LanguageSelector extends StatelessWidget {
-  const _LanguageSelector();
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = context.locale;
-
-    return PopupMenuButton<Locale>(
-      tooltip: '',
-      onSelected: context.setLocale,
-      itemBuilder: (context) {
-        return [
-          PopupMenuItem(
-            value: const Locale('en'),
-            child: Text('onboarding.language.english'.tr()),
-          ),
-          PopupMenuItem(
-            value: const Locale('ru'),
-            child: Text('onboarding.language.russian'.tr()),
-          ),
-        ];
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              locale.languageCode.toUpperCase(),
-              style: AppTextStyles.labelMedium,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            const Icon(Icons.keyboard_arrow_down),
           ],
         ),
       ),

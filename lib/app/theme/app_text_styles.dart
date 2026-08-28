@@ -45,4 +45,12 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w600,
     height: 1.2,
   );
+
+  static const brand = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 28,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+    letterSpacing: -0.6,
+  );
 }

@@ -88,6 +88,8 @@ class AppButton extends StatelessWidget {
 
   Widget _buildFilledButton() {
     final style = FilledButton.styleFrom(
+      minimumSize: const Size.fromHeight(52),
+
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.sm,
@@ -112,6 +114,8 @@ class AppButton extends StatelessWidget {
 
   Widget _buildOutlinedButton() {
     final style = OutlinedButton.styleFrom(
+      minimumSize: const Size.fromHeight(52),
+
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.sm,
