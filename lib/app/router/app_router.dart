@@ -5,6 +5,7 @@ import '../../features/auth/presentation/pages/sign_up_page.dart';
 import '../../features/calendar/presentation/calendar_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/files/presentation/files_page.dart';
+import '../../features/onboarding/presentation/pages/doctor_setup_page.dart';
 import '../../features/onboarding/presentation/pages/region_page.dart';
 import '../../features/onboarding/presentation/pages/welcome_page.dart';
 import '../../features/patients/presentation/patients_page.dart';
@@ -32,6 +33,13 @@ final appRouter = GoRouter(
       path: '/sign-up',
       builder: (context, state) {
         return const SignUpPage();
+      },
+    ),
+
+    GoRoute(
+      path: '/doctor-setup',
+      builder: (context, state) {
+        return const DoctorSetupPage();
       },
     ),
 

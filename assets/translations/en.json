@@ -70,6 +70,17 @@
       "passwordTooShort": "Use at least 8 characters.",
       "passwordMismatch": "Passwords do not match."
     },
+    "signIn": {
+      "title": "Sign in to Lumeno",
+      "description": "Enter your email and password to continue.",
+      "email": "Email",
+      "password": "Password",
+      "signIn": "Sign in",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create account",
+      "invalidEmail": "Enter a valid email address.",
+      "passwordRequired": "Enter your password."
+    },
     "doctorSetup": {
       "title": "Set up your profile",
       "description": "Add the essentials you’ll use across Lumeno.",

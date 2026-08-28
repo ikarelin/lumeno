@@ -70,6 +70,17 @@
       "passwordTooShort": "Используйте не менее 8 символов.",
       "passwordMismatch": "Пароли не совпадают."
     },
+    "signIn": {
+      "title": "Войдите в Lumeno",
+      "description": "Введите email и пароль, чтобы продолжить.",
+      "email": "Email",
+      "password": "Пароль",
+      "signIn": "Войти",
+      "noAccount": "Нет аккаунта?",
+      "createAccount": "Создать аккаунт",
+      "invalidEmail": "Введите корректный email.",
+      "passwordRequired": "Введите пароль."
+    },
     "doctorSetup": {
       "title": "Настройте профиль",
       "description": "Добавьте основные данные, которые будут использоваться в Lumeno.",

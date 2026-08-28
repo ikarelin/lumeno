@@ -11,15 +11,16 @@ class LumenoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Lumeno',
+      debugShowCheckedModeBanner: false,
       locale: context.locale,
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       theme: LumenoTheme.light,
       darkTheme: LumenoTheme.dark,
 
-      themeMode: ThemeMode.system,
+      //themeMode: ThemeMode.system,
       //themeMode: ThemeMode.dark,
-      //themeMode: ThemeMode.light,
+      themeMode: ThemeMode.light,
       routerConfig: appRouter,
     );
   }
