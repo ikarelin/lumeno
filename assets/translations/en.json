@@ -43,6 +43,47 @@
     "language": {
       "english": "English",
       "russian": "Русский"
+    },
+    "region": {
+      "title": "Select your region",
+      "description": "Choose where your Lumeno account will be managed.",
+      "russia": {
+        "title": "Russia",
+        "description": "For practices operating in Russia."
+      },
+      "europeInternational": {
+        "title": "Europe & International",
+        "description": "For practices operating in Europe and other countries."
+      },
+      "continue": "Continue"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "description": "Enter your email and choose a password to continue.",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "createAccount": "Create account",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "invalidEmail": "Enter a valid email address.",
+      "passwordTooShort": "Use at least 8 characters.",
+      "passwordMismatch": "Passwords do not match."
+    },
+    "doctorSetup": {
+      "title": "Set up your profile",
+      "description": "Add the essentials you’ll use across Lumeno.",
+      "name": "Your name",
+      "specialty": "Specialty",
+      "continue": "Continue",
+      "required": "This field is required."
+    },
+    "clinicSetup": {
+      "title": "Add your clinic",
+      "description": "Add a clinic now or continue and set it up later.",
+      "clinicName": "Clinic name",
+      "continue": "Continue",
+      "addLater": "Add later"
     }
   }
 }

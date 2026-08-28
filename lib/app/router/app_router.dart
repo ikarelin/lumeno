@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/pages/sign_in_page.dart';
+import '../../features/auth/presentation/pages/sign_up_page.dart';
 import '../../features/calendar/presentation/calendar_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/files/presentation/files_page.dart';
@@ -28,11 +29,19 @@ final appRouter = GoRouter(
     ),
 
     GoRoute(
+      path: '/sign-up',
+      builder: (context, state) {
+        return const SignUpPage();
+      },
+    ),
+
+    GoRoute(
       path: '/sign-in',
       builder: (context, state) {
         return const SignInPage();
       },
     ),
+
     ShellRoute(
       builder: (context, state, child) {
         return AppShell(child: child);

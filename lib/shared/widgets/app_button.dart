@@ -16,7 +16,7 @@ class AppButton extends StatelessWidget {
 
   factory AppButton.primary({
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     IconData? icon,
     bool fullWidth = false,
     Key? key,
@@ -33,7 +33,7 @@ class AppButton extends StatelessWidget {
 
   factory AppButton.secondary({
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     IconData? icon,
     bool fullWidth = false,
     Key? key,
@@ -50,7 +50,7 @@ class AppButton extends StatelessWidget {
 
   factory AppButton.text({
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     IconData? icon,
     bool fullWidth = false,
     Key? key,
@@ -66,7 +66,7 @@ class AppButton extends StatelessWidget {
   }
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final IconData? icon;
   final bool fullWidth;
   final AppButtonVariant variant;
@@ -89,7 +89,6 @@ class AppButton extends StatelessWidget {
   Widget _buildFilledButton() {
     final style = FilledButton.styleFrom(
       minimumSize: const Size.fromHeight(52),
-
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.sm,
@@ -115,7 +114,6 @@ class AppButton extends StatelessWidget {
   Widget _buildOutlinedButton() {
     final style = OutlinedButton.styleFrom(
       minimumSize: const Size.fromHeight(52),
-
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.sm,

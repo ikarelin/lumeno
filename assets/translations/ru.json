@@ -30,9 +30,9 @@
   "files": {
     "title": "Файлы"
   },
-    "sidebar": {
-      "quickActions": "Быстрые действия"
-    },
+  "sidebar": {
+    "quickActions": "Быстрые действия"
+  },
   "onboarding": {
     "welcome": {
       "title": "Добро пожаловать в Lumeno",
@@ -43,6 +43,47 @@
     "language": {
       "english": "English",
       "russian": "Русский"
+    },
+    "region": {
+      "title": "Выберите регион",
+      "description": "Выберите, где будет управляться ваш аккаунт Lumeno.",
+      "russia": {
+        "title": "Россия",
+        "description": "Для практики в России."
+      },
+      "europeInternational": {
+        "title": "Европа и другие страны",
+        "description": "Для практики в Европе и других странах."
+      },
+      "continue": "Продолжить"
+    },
+    "signUp": {
+      "title": "Создайте аккаунт",
+      "description": "Введите email и придумайте пароль, чтобы продолжить.",
+      "email": "Email",
+      "password": "Пароль",
+      "confirmPassword": "Повторите пароль",
+      "createAccount": "Создать аккаунт",
+      "alreadyHaveAccount": "Уже есть аккаунт?",
+      "signIn": "Войти",
+      "invalidEmail": "Введите корректный email.",
+      "passwordTooShort": "Используйте не менее 8 символов.",
+      "passwordMismatch": "Пароли не совпадают."
+    },
+    "doctorSetup": {
+      "title": "Настройте профиль",
+      "description": "Добавьте основные данные, которые будут использоваться в Lumeno.",
+      "name": "Ваше имя",
+      "specialty": "Специальность",
+      "continue": "Продолжить",
+      "required": "Обязательное поле."
+    },
+    "clinicSetup": {
+      "title": "Добавьте клинику",
+      "description": "Добавьте клинику сейчас или настройте её позже.",
+      "clinicName": "Название клиники",
+      "continue": "Продолжить",
+      "addLater": "Добавить позже"
     }
   }
-  }
+}
