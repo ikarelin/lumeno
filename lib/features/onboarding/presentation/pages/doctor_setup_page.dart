@@ -7,9 +7,13 @@ import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../domain/doctor_setup_repository.dart';
+import '../controllers/doctor_setup_controller.dart';
 
 class DoctorSetupPage extends StatefulWidget {
-  const DoctorSetupPage({super.key});
+  const DoctorSetupPage({super.key, this.repository});
+
+  final DoctorSetupRepository? repository;
 
   @override
   State<DoctorSetupPage> createState() => _DoctorSetupPageState();
@@ -24,10 +28,31 @@ class _DoctorSetupPageState extends State<DoctorSetupPage> {
   final _nameController = TextEditingController();
   final _specialtyController = TextEditingController();
 
+  DoctorSetupController? _doctorSetupController;
+
+  bool get _isSubmitting => _doctorSetupController?.isSubmitting ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final repository = widget.repository;
+
+    if (repository != null) {
+      _doctorSetupController = DoctorSetupController(repository)
+        ..addListener(_handleControllerChanged);
+    }
+  }
+
   @override
   void dispose() {
+    _doctorSetupController
+      ?..removeListener(_handleControllerChanged)
+      ..dispose();
+
     _nameController.dispose();
     _specialtyController.dispose();
+
     super.dispose();
   }
 
@@ -88,6 +113,7 @@ class _DoctorSetupPageState extends State<DoctorSetupPage> {
 
                     TextFormField(
                       controller: _nameController,
+                      enabled: !_isSubmitting,
                       keyboardType: TextInputType.name,
                       textCapitalization: TextCapitalization.words,
                       textInputAction: TextInputAction.next,
@@ -103,6 +129,7 @@ class _DoctorSetupPageState extends State<DoctorSetupPage> {
 
                     TextFormField(
                       controller: _specialtyController,
+                      enabled: !_isSubmitting,
                       textCapitalization: TextCapitalization.sentences,
                       textInputAction: TextInputAction.done,
                       decoration: _inputDecoration(
@@ -116,9 +143,11 @@ class _DoctorSetupPageState extends State<DoctorSetupPage> {
                     const SizedBox(height: AppSpacing.xl),
 
                     AppButton.primary(
-                      label: 'onboarding.doctorSetup.continue'.tr(),
+                      label: _isSubmitting
+                          ? 'onboarding.doctorSetup.saving'.tr()
+                          : 'onboarding.doctorSetup.continue'.tr(),
                       fullWidth: true,
-                      onPressed: _submit,
+                      onPressed: _isSubmitting ? null : _submit,
                     ),
 
                     const SizedBox(height: AppSpacing.md),
@@ -127,7 +156,7 @@ class _DoctorSetupPageState extends State<DoctorSetupPage> {
                       label: MaterialLocalizations.of(context)
                           .backButtonTooltip,
                       fullWidth: true,
-                      onPressed: _goBack,
+                      onPressed: _isSubmitting ? null : _goBack,
                     ),
                   ],
                 ),
@@ -185,13 +214,47 @@ class _DoctorSetupPageState extends State<DoctorSetupPage> {
     return null;
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_isSubmitting) {
+      return;
+    }
+
     FocusScope.of(context).unfocus();
 
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
+    final controller = _doctorSetupController;
+
+    if (controller == null) {
+      _goToClinicSetup();
+      return;
+    }
+
+    final completed = await controller.completeDoctorSetup(
+      doctorName: _nameController.text,
+      specialty: _specialtyController.text,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!completed) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('onboarding.doctorSetup.saveFailed'.tr())),
+        );
+
+      return;
+    }
+
+    _goToClinicSetup();
+  }
+
+  void _goToClinicSetup() {
     final region = GoRouterState.of(context).uri.queryParameters['region'];
 
     final location = region == null
@@ -207,5 +270,11 @@ class _DoctorSetupPageState extends State<DoctorSetupPage> {
     final location = region == null ? '/sign-up' : '/sign-up?region=$region';
 
     context.go(location);
+  }
+
+  void _handleControllerChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

@@ -64,11 +64,15 @@
       "password": "Password",
       "confirmPassword": "Confirm password",
       "createAccount": "Create account",
+      "creatingAccount": "Creating account…",
       "alreadyHaveAccount": "Already have an account?",
       "signIn": "Sign in",
       "invalidEmail": "Enter a valid email address.",
       "passwordTooShort": "Use at least 8 characters.",
-      "passwordMismatch": "Passwords do not match."
+      "passwordMismatch": "Passwords do not match.",
+      "emailConfirmationTitle": "Check your email",
+      "emailConfirmationMessage": "We sent a confirmation link to {email}. Confirm your email, then sign in to continue.",
+      "signUpFailed": "We couldn't create your account. Please try again."
     },
     "signIn": {
       "title": "Sign in to Lumeno",
@@ -76,6 +80,8 @@
       "email": "Email",
       "password": "Password",
       "signIn": "Sign in",
+      "signingIn": "Signing in…",
+      "signInFailed": "We couldn't sign you in. Check your email and password, then try again.",
       "noAccount": "Don't have an account?",
       "createAccount": "Create account",
       "invalidEmail": "Enter a valid email address.",
@@ -87,6 +93,8 @@
       "name": "Your name",
       "specialty": "Specialty",
       "continue": "Continue",
+      "saving": "Saving...",
+      "saveFailed": "We couldn't save your profile. Please try again.",
       "required": "This field is required."
     },
     "clinicSetup": {

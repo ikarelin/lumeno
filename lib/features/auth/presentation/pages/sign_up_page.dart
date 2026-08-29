@@ -7,9 +7,13 @@ import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../domain/auth_repository.dart';
+import '../controllers/auth_sign_up_controller.dart';
 
 class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+  const SignUpPage({this.authRepository, super.key});
+
+  final AuthRepository? authRepository;
 
   @override
   State<SignUpPage> createState() => _SignUpPageState();
@@ -25,14 +29,36 @@ class _SignUpPageState extends State<SignUpPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  AuthSignUpController? _signUpController;
+
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    final repository = widget.authRepository;
+
+    if (repository != null) {
+      _signUpController = AuthSignUpController(repository)
+        ..addListener(_handleSignUpStateChanged);
+    }
+  }
+
+  @override
   void dispose() {
+    final signUpController = _signUpController;
+
+    if (signUpController != null) {
+      signUpController.removeListener(_handleSignUpStateChanged);
+      signUpController.dispose();
+    }
+
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+
     super.dispose();
   }
 
@@ -40,6 +66,7 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isSubmitting = _signUpController?.isSubmitting ?? false;
 
     return Scaffold(
       body: SafeArea(
@@ -93,6 +120,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                     TextFormField(
                       controller: _emailController,
+                      enabled: !isSubmitting,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.email],
@@ -108,6 +136,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                     TextFormField(
                       controller: _passwordController,
+                      enabled: !isSubmitting,
                       obscureText: !_passwordVisible,
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.newPassword],
@@ -122,11 +151,13 @@ class _SignUpPageState extends State<SignUpPage> {
                                     .hideAccountsLabel
                               : MaterialLocalizations.of(context)
                                     .showAccountsLabel,
-                          onPressed: () {
-                            setState(() {
-                              _passwordVisible = !_passwordVisible;
-                            });
-                          },
+                          onPressed: isSubmitting
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _passwordVisible = !_passwordVisible;
+                                  });
+                                },
                           icon: Icon(
                             _passwordVisible
                                 ? Icons.visibility_off_rounded
@@ -141,6 +172,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                     TextFormField(
                       controller: _confirmPasswordController,
+                      enabled: !isSubmitting,
                       obscureText: !_confirmPasswordVisible,
                       textInputAction: TextInputAction.done,
                       autofillHints: const [AutofillHints.newPassword],
@@ -155,12 +187,14 @@ class _SignUpPageState extends State<SignUpPage> {
                                     .hideAccountsLabel
                               : MaterialLocalizations.of(context)
                                     .showAccountsLabel,
-                          onPressed: () {
-                            setState(() {
-                              _confirmPasswordVisible =
-                                  !_confirmPasswordVisible;
-                            });
-                          },
+                          onPressed: isSubmitting
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _confirmPasswordVisible =
+                                        !_confirmPasswordVisible;
+                                  });
+                                },
                           icon: Icon(
                             _confirmPasswordVisible
                                 ? Icons.visibility_off_rounded
@@ -175,9 +209,11 @@ class _SignUpPageState extends State<SignUpPage> {
                     const SizedBox(height: AppSpacing.xl),
 
                     AppButton.primary(
-                      label: 'onboarding.signUp.createAccount'.tr(),
+                      label: isSubmitting
+                          ? 'onboarding.signUp.creatingAccount'.tr()
+                          : 'onboarding.signUp.createAccount'.tr(),
                       fullWidth: true,
-                      onPressed: _submit,
+                      onPressed: isSubmitting ? null : _submit,
                     ),
 
                     const SizedBox(height: AppSpacing.md),
@@ -186,7 +222,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       label: MaterialLocalizations.of(context)
                           .backButtonTooltip,
                       fullWidth: true,
-                      onPressed: _goBack,
+                      onPressed: isSubmitting ? null : _goBack,
                     ),
 
                     const SizedBox(height: AppSpacing.lg),
@@ -202,9 +238,11 @@ class _SignUpPageState extends State<SignUpPage> {
                           ),
                         ),
                         TextButton(
-                          onPressed: () {
-                            context.go('/sign-in');
-                          },
+                          onPressed: isSubmitting
+                              ? null
+                              : () {
+                                  context.go('/sign-in');
+                                },
                           child: Text('onboarding.signUp.signIn'.tr()),
                         ),
                       ],
@@ -287,7 +325,7 @@ class _SignUpPageState extends State<SignUpPage> {
     return null;
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     FocusScope.of(context).unfocus();
 
     if (!(_formKey.currentState?.validate() ?? false)) {
@@ -296,21 +334,94 @@ class _SignUpPageState extends State<SignUpPage> {
 
     final region = GoRouterState.of(context).uri.queryParameters['region'];
 
-    final location = region == null
-        ? '/doctor-setup'
-        : '/doctor-setup?region=$region';
-
-    context.go(location);
-  }
-
-  void _goBack() {
-    final region = GoRouterState.of(context).uri.queryParameters['region'];
-
-    if (region == null) {
+    if (region == null || region.isEmpty) {
       context.go('/region');
       return;
     }
 
+    final signUpController = _signUpController;
+
+    if (signUpController == null) {
+      context.go('/doctor-setup?region=$region');
+      return;
+    }
+
+    final email = _emailController.text.trim();
+
+    final result = await signUpController.signUp(
+      email: email,
+      password: _passwordController.text,
+      accountRegion: region,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    switch (result) {
+      case AuthSignUpStatus.authenticated:
+        context.go('/doctor-setup');
+
+      case AuthSignUpStatus.emailConfirmationRequired:
+        await _showEmailConfirmationDialog(email);
+
+        if (!mounted) {
+          return;
+        }
+
+        context.go('/sign-in');
+
+      case null:
+        if (signUpController.lastError != null) {
+          _showSignUpError();
+        }
+    }
+  }
+
+  Future<void> _showEmailConfirmationDialog(String email) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('onboarding.signUp.emailConfirmationTitle'.tr()),
+          content: Text(
+            'onboarding.signUp.emailConfirmationMessage'.tr(
+              namedArgs: {'email': email},
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text(
+                MaterialLocalizations.of(dialogContext).okButtonLabel,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSignUpError() {
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text('onboarding.signUp.signUpFailed'.tr())),
+      );
+  }
+
+  void _handleSignUpStateChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _goBack() {
     context.go('/region');
   }
 }

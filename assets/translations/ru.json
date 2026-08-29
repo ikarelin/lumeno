@@ -64,11 +64,15 @@
       "password": "Пароль",
       "confirmPassword": "Повторите пароль",
       "createAccount": "Создать аккаунт",
+      "creatingAccount": "Создаём аккаунт…",
       "alreadyHaveAccount": "Уже есть аккаунт?",
       "signIn": "Войти",
       "invalidEmail": "Введите корректный email.",
       "passwordTooShort": "Используйте не менее 8 символов.",
-      "passwordMismatch": "Пароли не совпадают."
+      "passwordMismatch": "Пароли не совпадают.",
+      "emailConfirmationTitle": "Проверьте почту",
+      "emailConfirmationMessage": "Мы отправили ссылку для подтверждения на {email}. Подтвердите email, затем войдите, чтобы продолжить.",
+      "signUpFailed": "Не удалось создать аккаунт. Попробуйте ещё раз."
     },
     "signIn": {
       "title": "Войдите в Lumeno",
@@ -76,6 +80,8 @@
       "email": "Email",
       "password": "Пароль",
       "signIn": "Войти",
+      "signingIn": "Входим…",
+      "signInFailed": "Не удалось войти. Проверьте email и пароль и попробуйте ещё раз.",
       "noAccount": "Нет аккаунта?",
       "createAccount": "Создать аккаунт",
       "invalidEmail": "Введите корректный email.",
@@ -87,6 +93,8 @@
       "name": "Ваше имя",
       "specialty": "Специальность",
       "continue": "Продолжить",
+      "saving": "Сохраняем…",
+      "saveFailed": "Не удалось сохранить профиль. Попробуйте ещё раз.",
       "required": "Обязательное поле."
     },
     "clinicSetup": {

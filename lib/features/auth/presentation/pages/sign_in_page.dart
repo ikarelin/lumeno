@@ -7,9 +7,13 @@ import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../domain/auth_sign_in_repository.dart';
+import '../controllers/auth_sign_in_controller.dart';
 
 class SignInPage extends StatefulWidget {
-  const SignInPage({super.key});
+  const SignInPage({super.key, this.repository});
+
+  final AuthSignInRepository? repository;
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -24,12 +28,33 @@ class _SignInPageState extends State<SignInPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  AuthSignInController? _authSignInController;
+
   bool _passwordVisible = false;
+
+  bool get _isSubmitting => _authSignInController?.isSubmitting ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final repository = widget.repository;
+
+    if (repository != null) {
+      _authSignInController = AuthSignInController(repository)
+        ..addListener(_handleControllerChanged);
+    }
+  }
 
   @override
   void dispose() {
+    _authSignInController
+      ?..removeListener(_handleControllerChanged)
+      ..dispose();
+
     _emailController.dispose();
     _passwordController.dispose();
+
     super.dispose();
   }
 
@@ -90,6 +115,7 @@ class _SignInPageState extends State<SignInPage> {
 
                     TextFormField(
                       controller: _emailController,
+                      enabled: !_isSubmitting,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.email],
@@ -105,6 +131,7 @@ class _SignInPageState extends State<SignInPage> {
 
                     TextFormField(
                       controller: _passwordController,
+                      enabled: !_isSubmitting,
                       obscureText: !_passwordVisible,
                       textInputAction: TextInputAction.done,
                       autofillHints: const [AutofillHints.password],
@@ -119,11 +146,13 @@ class _SignInPageState extends State<SignInPage> {
                                     .hideAccountsLabel
                               : MaterialLocalizations.of(context)
                                     .showAccountsLabel,
-                          onPressed: () {
-                            setState(() {
-                              _passwordVisible = !_passwordVisible;
-                            });
-                          },
+                          onPressed: _isSubmitting
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _passwordVisible = !_passwordVisible;
+                                  });
+                                },
                           icon: Icon(
                             _passwordVisible
                                 ? Icons.visibility_off_rounded
@@ -138,9 +167,11 @@ class _SignInPageState extends State<SignInPage> {
                     const SizedBox(height: AppSpacing.xl),
 
                     AppButton.primary(
-                      label: 'onboarding.signIn.signIn'.tr(),
+                      label: _isSubmitting
+                          ? 'onboarding.signIn.signingIn'.tr()
+                          : 'onboarding.signIn.signIn'.tr(),
                       fullWidth: true,
-                      onPressed: _submit,
+                      onPressed: _isSubmitting ? null : _submit,
                     ),
 
                     const SizedBox(height: AppSpacing.md),
@@ -149,9 +180,11 @@ class _SignInPageState extends State<SignInPage> {
                       label: MaterialLocalizations.of(context)
                           .backButtonTooltip,
                       fullWidth: true,
-                      onPressed: () {
-                        context.go('/welcome');
-                      },
+                      onPressed: _isSubmitting
+                          ? null
+                          : () {
+                              context.go('/welcome');
+                            },
                     ),
 
                     const SizedBox(height: AppSpacing.lg),
@@ -167,9 +200,11 @@ class _SignInPageState extends State<SignInPage> {
                           ),
                         ),
                         TextButton(
-                          onPressed: () {
-                            context.go('/region');
-                          },
+                          onPressed: _isSubmitting
+                              ? null
+                              : () {
+                                  context.go('/region');
+                                },
                           child: Text('onboarding.signIn.createAccount'.tr()),
                         ),
                       ],
@@ -244,13 +279,45 @@ class _SignInPageState extends State<SignInPage> {
     return null;
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_isSubmitting) {
+      return;
+    }
+
     FocusScope.of(context).unfocus();
 
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
-    context.go('/dashboard');
+    final controller = _authSignInController;
+
+    if (controller == null) {
+      context.go('/dashboard');
+      return;
+    }
+
+    final signedIn = await controller.signIn(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!signedIn) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('onboarding.signIn.signInFailed'.tr())),
+        );
+    }
+  }
+
+  void _handleControllerChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }
