@@ -53,6 +53,11 @@ class SupabaseAuthSessionRepository
     );
   }
 
+  @override
+  Future<void> signOut() async {
+    await _client.auth.signOut(scope: SignOutScope.local);
+  }
+
   AuthSessionStatus _resolveUser(User? user) {
     return AuthUserMetadata.resolveStatus(
       isAuthenticated: user != null,

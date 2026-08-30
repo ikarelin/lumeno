@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_radius.dart';
 import '../../../app/theme/app_spacing.dart';
@@ -15,6 +16,11 @@ class SidebarProfile extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final currentPath = GoRouterState.of(context).uri.path;
+
+    final isSelected =
+        currentPath == '/profile' || currentPath.startsWith('/profile/');
+
     final profile = ref
         .watch(doctorProfileProvider)
         .when(
@@ -27,15 +33,47 @@ class SidebarProfile extends ConsumerWidget {
     final specialty = profile?.specialty ?? '—';
     final initials = _initials(profile?.fullName);
 
+    final backgroundColor = isSelected
+        ? colorScheme.primaryContainer
+        : Colors.transparent;
+
+    final foregroundColor = isSelected
+        ? colorScheme.onPrimaryContainer
+        : colorScheme.onSurface;
+
+    final secondaryForegroundColor = isSelected
+        ? colorScheme.onPrimaryContainer.withValues(alpha: 0.72)
+        : colorScheme.onSurfaceVariant;
+
+    final avatarBackgroundColor = isSelected
+        ? colorScheme.primary
+        : colorScheme.primaryContainer;
+
+    final avatarForegroundColor = isSelected
+        ? colorScheme.onPrimary
+        : colorScheme.onPrimaryContainer;
+
+    final borderColor = isSelected
+        ? colorScheme.primary.withValues(alpha: 0.32)
+        : colorScheme.outlineVariant;
+
     return Material(
-      color: colorScheme.surfaceContainerHighest,
+      color: backgroundColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        side: BorderSide(color: colorScheme.outlineVariant),
+        side: BorderSide(color: borderColor),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTap:
+            onTap ??
+            () {
+              if (isSelected) {
+                return;
+              }
+
+              context.push('/profile');
+            },
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -45,20 +83,19 @@ class SidebarProfile extends ConsumerWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: colorScheme.primaryContainer,
-                foregroundColor: colorScheme.onPrimaryContainer,
+                backgroundColor: avatarBackgroundColor,
+                foregroundColor: avatarForegroundColor,
                 child: initials == null
                     ? const Icon(Icons.person_outline_rounded, size: 20)
                     : Text(
                         initials,
                         style: theme.textTheme.labelMedium?.copyWith(
+                          color: avatarForegroundColor,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
               ),
-
               const SizedBox(width: AppSpacing.md),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,30 +105,27 @@ class SidebarProfile extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
+                        color: foregroundColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-
                     const SizedBox(height: 2),
-
                     Text(
                       specialty,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: secondaryForegroundColor,
                       ),
                     ),
                   ],
                 ),
               ),
-
               const SizedBox(width: AppSpacing.sm),
-
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: colorScheme.onSurfaceVariant,
+                color: secondaryForegroundColor,
               ),
             ],
           ),

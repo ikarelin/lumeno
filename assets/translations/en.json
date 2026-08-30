@@ -39,6 +39,29 @@
   "sidebar": {
     "quickActions": "Quick actions"
   },
+  "profile": {
+    "title": "Profile & settings",
+    "description": "Manage your professional details and workspace preferences.",
+    "professionalDetails": "Professional details",
+    "name": "Name",
+    "specialty": "Specialty",
+    "email": "Email",
+    "emailDescription": "Your email is managed by your Lumeno account.",
+    "saveChanges": "Save changes",
+    "saving": "Saving...",
+    "saved": "Profile updated.",
+    "saveFailed": "We couldn't save your profile. Please try again.",
+    "required": "This field is required.",
+    "preferences": "Preferences",
+    "language": "Language",
+    "appearance": "Appearance",
+    "appearanceSystem": "System",
+    "appearanceLight": "Light",
+    "appearanceDark": "Dark",
+    "logOut": "Log out",
+    "loggingOut": "Logging out...",
+    "logOutFailed": "We couldn't log you out. Please try again."
+  },
   "onboarding": {
     "welcome": {
       "title": "Welcome to Lumeno",

@@ -15,6 +15,7 @@ import '../../features/onboarding/presentation/pages/doctor_setup_page.dart';
 import '../../features/onboarding/presentation/pages/region_page.dart';
 import '../../features/onboarding/presentation/pages/welcome_page.dart';
 import '../../features/patients/presentation/patients_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
 import '../shell/app_shell.dart';
 import 'auth_route_policy.dart';
 
@@ -128,6 +129,12 @@ final appRouter = GoRouter(
           path: '/files',
           builder: (context, state) {
             return const FilesPage();
+          },
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) {
+            return const ProfilePage();
           },
         ),
       ],

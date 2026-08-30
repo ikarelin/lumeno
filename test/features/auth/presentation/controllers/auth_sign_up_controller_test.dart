@@ -154,4 +154,7 @@ class _FakeAuthRepository implements AuthRepository {
 
     return Future.value(result);
   }
+
+  @override
+  Future<void> signOut() async {}
 }

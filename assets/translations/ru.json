@@ -39,6 +39,29 @@
   "sidebar": {
     "quickActions": "Быстрые действия"
   },
+  "profile": {
+    "title": "Профиль и настройки",
+    "description": "Управляйте профессиональными данными и настройками рабочего пространства.",
+    "professionalDetails": "Профессиональные данные",
+    "name": "Имя",
+    "specialty": "Специальность",
+    "email": "Email",
+    "emailDescription": "Email привязан к вашему аккаунту Lumeno.",
+    "saveChanges": "Сохранить изменения",
+    "saving": "Сохраняем…",
+    "saved": "Профиль обновлён.",
+    "saveFailed": "Не удалось сохранить профиль. Попробуйте ещё раз.",
+    "required": "Обязательное поле.",
+    "preferences": "Настройки",
+    "language": "Язык",
+    "appearance": "Оформление",
+    "appearanceSystem": "Системное",
+    "appearanceLight": "Светлое",
+    "appearanceDark": "Тёмное",
+    "logOut": "Выйти",
+    "loggingOut": "Выходим…",
+    "logOutFailed": "Не удалось выйти из аккаунта. Попробуйте ещё раз."
+  },
   "onboarding": {
     "welcome": {
       "title": "Добро пожаловать в Lumeno",

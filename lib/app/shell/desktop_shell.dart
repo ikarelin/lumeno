@@ -4,18 +4,31 @@ import 'package:go_router/go_router.dart';
 import '../../shared/widgets/sidebar/app_sidebar.dart';
 import '../navigation/app_navigation_items.dart';
 
-class DesktopShell extends StatelessWidget {
+class DesktopShell extends StatefulWidget {
   const DesktopShell({super.key, required this.child});
 
   final Widget child;
 
   @override
+  State<DesktopShell> createState() => _DesktopShellState();
+}
+
+class _DesktopShellState extends State<DesktopShell> {
+  int _lastMainIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
+    final currentMainIndex = _findCurrentMainIndex(context);
+
+    if (currentMainIndex != null) {
+      _lastMainIndex = currentMainIndex;
+    }
+
     return Scaffold(
       body: Row(
         children: [
           AppSidebar(
-            selectedIndex: _calculateIndex(context),
+            selectedIndex: currentMainIndex ?? _lastMainIndex,
             onDestinationSelected: (index) {
               context.go(AppNavigationItems.items[index].path);
             },
@@ -26,13 +39,13 @@ class DesktopShell extends StatelessWidget {
               // TODO: Implement visit creation flow.
             },
           ),
-          Expanded(child: child),
+          Expanded(child: widget.child),
         ],
       ),
     );
   }
 
-  int _calculateIndex(BuildContext context) {
+  int? _findCurrentMainIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
 
     for (var i = 0; i < AppNavigationItems.items.length; i++) {
@@ -41,6 +54,6 @@ class DesktopShell extends StatelessWidget {
       }
     }
 
-    return 0;
+    return null;
   }
 }
