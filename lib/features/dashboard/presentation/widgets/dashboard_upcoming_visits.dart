@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../shared/widgets/app_card.dart';
 
 class DashboardUpcomingVisit {
   const DashboardUpcomingVisit({
@@ -26,26 +27,24 @@ class DashboardUpcomingVisits extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Material(
-      color: colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          for (var i = 0; i < visits.length; i++) ...[
-            _UpcomingVisitRow(visit: visits[i]),
-            if (i < visits.length - 1)
-              Divider(
-                height: 1,
-                indent: AppSpacing.lg,
-                endIndent: AppSpacing.lg,
-                color: colorScheme.outlineVariant,
-              ),
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        child: Column(
+          children: [
+            for (var i = 0; i < visits.length; i++) ...[
+              _UpcomingVisitRow(visit: visits[i]),
+              if (i < visits.length - 1)
+                Divider(
+                  height: 1,
+                  indent: AppSpacing.lg,
+                  endIndent: AppSpacing.lg,
+                  color: colorScheme.outlineVariant,
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -82,26 +81,22 @@ class _UpcomingVisitRow extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(width: AppSpacing.md),
-
               Container(
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
+                  color: colorScheme.primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: Icon(
                   Icons.person_outline_rounded,
                   size: 19,
-                  color: colorScheme.onPrimaryContainer,
+                  color: colorScheme.primary,
                 ),
               ),
-
               const SizedBox(width: AppSpacing.md),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,9 +121,7 @@ class _UpcomingVisitRow extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(width: AppSpacing.md),
-
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,

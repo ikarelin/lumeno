@@ -12,6 +12,8 @@ import '../widgets/quick_actions.dart';
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
+  static const _contentMaxWidth = 1120.0;
+
   @override
   Widget build(BuildContext context) {
     final isDesktop =
@@ -44,44 +46,49 @@ class DashboardPage extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const DashboardHeader(),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const DashboardHeader(),
 
-              const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.xl),
 
-              DashboardPrimaryCards(
-                nextVisitTime: '09:00',
-                patientName: 'John Smith',
-                appointmentType: 'dashboard.appointmentTypes.followUp'.tr(),
-                availableDateLabel: currentDate,
-                availableTimeRange: '11:00–11:30',
+                  DashboardPrimaryCards(
+                    nextVisitTime: '09:00',
+                    patientName: 'John Smith',
+                    appointmentType: 'dashboard.appointmentTypes.followUp'.tr(),
+                    availableDateLabel: currentDate,
+                    availableTimeRange: '11:00–11:30',
+                  ),
+
+                  if (isDesktop) ...[
+                    const SizedBox(height: AppSpacing.xl),
+
+                    AppSectionTitle(
+                      title: 'dashboard.upcomingVisits'.tr(),
+                      actionLabel: 'dashboard.viewAll'.tr(),
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    DashboardUpcomingVisits(visits: upcomingVisits),
+                  ],
+
+                  if (!isDesktop) ...[
+                    const SizedBox(height: AppSpacing.xl),
+
+                    AppSectionTitle(title: 'dashboard.quickActions'.tr()),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    const QuickActions(),
+                  ],
+                ],
               ),
-
-              if (isDesktop) ...[
-                const SizedBox(height: AppSpacing.xl),
-
-                AppSectionTitle(
-                  title: 'dashboard.upcomingVisits'.tr(),
-                  actionLabel: 'dashboard.viewAll'.tr(),
-                ),
-
-                const SizedBox(height: AppSpacing.md),
-
-                DashboardUpcomingVisits(visits: upcomingVisits),
-              ],
-
-              if (!isDesktop) ...[
-                const SizedBox(height: AppSpacing.xl),
-
-                AppSectionTitle(title: 'dashboard.quickActions'.tr()),
-
-                const SizedBox(height: AppSpacing.md),
-
-                const QuickActions(),
-              ],
-            ],
+            ),
           ),
         ),
       ),

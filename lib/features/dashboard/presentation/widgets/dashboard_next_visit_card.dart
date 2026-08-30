@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_text_styles.dart';
+import '../../../../shared/widgets/app_card.dart';
 
 class DashboardNextVisitCard extends StatelessWidget {
   const DashboardNextVisitCard({
@@ -20,108 +22,83 @@ class DashboardNextVisitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Material(
-      color: colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Icon(
-                      Icons.event_outlined,
-                      size: 20,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-
-                  const SizedBox(width: AppSpacing.sm),
-
-                  Expanded(
-                    child: Text(
-                      'dashboard.nextVisit'.tr(),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              Text(
-                time,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Icon(
+                  Icons.event_outlined,
+                  size: 20,
                   color: colorScheme.primary,
                 ),
               ),
-
-              const SizedBox(height: AppSpacing.sm),
-
-              Text(
-                patientName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  'dashboard.nextVisit'.tr(),
+                  style: AppTextStyles.titleLarge,
                 ),
-              ),
-
-              const SizedBox(height: AppSpacing.xs),
-
-              Text(
-                appointmentType,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              Row(
-                children: [
-                  Text(
-                    'dashboard.openVisit'.tr(),
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  const SizedBox(width: AppSpacing.xs),
-
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 18,
-                    color: colorScheme.primary,
-                  ),
-                ],
               ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            time,
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            patientName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.titleLarge.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            appointmentType,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              Text(
+                'dashboard.openVisit'.tr(),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: 18,
+                color: colorScheme.primary,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
