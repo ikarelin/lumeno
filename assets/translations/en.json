@@ -4,6 +4,12 @@
     "greeting": "Good morning, {name}",
     "todayAppointments": "Today appointments",
     "viewAll": "View all",
+    "nextVisit": "Next visit",
+    "nextAvailableSlot": "Next available slot",
+    "upcomingVisits": "Upcoming visits",
+    "bookPatient": "Book patient",
+    "openVisit": "Open visit",
+    "available": "Available",
     "quickActions": "Quick actions",
     "quickActionsItems": {
       "newPatient": {

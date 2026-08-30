@@ -34,7 +34,11 @@ class AppSidebar extends StatelessWidget {
         children: [
           const SidebarBrand(),
 
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.md),
+
+          Divider(height: 1, color: colorScheme.outlineVariant),
+
+          const SizedBox(height: AppSpacing.md),
 
           for (var i = 0; i < AppNavigationItems.items.length; i++)
             SidebarItem(
@@ -43,11 +47,11 @@ class AppSidebar extends StatelessWidget {
               onTap: () => onDestinationSelected(i),
             ),
 
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.md),
 
           Divider(height: 1, color: colorScheme.outlineVariant),
 
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.md),
 
           SidebarQuickActions(
             onNewPatient: onNewPatient,

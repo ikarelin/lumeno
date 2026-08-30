@@ -8,14 +8,29 @@ class SidebarBrand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
       children: [
-        Text('Lumeno', style: AppTextStyles.titleLarge),
+        SizedBox(
+          width: 44,
+          height: 44,
+          child: Image.asset(
+            'assets/branding/lumeno_logo_mark_concept_v1.png',
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          ),
+        ),
 
-        SizedBox(height: AppSpacing.xs),
+        const SizedBox(width: AppSpacing.sm),
 
-        Text('Clinical workspace', style: AppTextStyles.bodyMedium),
+        Text(
+          'Lumeno',
+          style: AppTextStyles.brand.copyWith(
+            fontSize: 24,
+            color: colorScheme.onSurface,
+          ),
+        ),
       ],
     );
   }

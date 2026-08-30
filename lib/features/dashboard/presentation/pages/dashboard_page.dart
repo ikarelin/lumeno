@@ -5,8 +5,9 @@ import '../../../../app/theme/app_breakpoints.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../shared/widgets/app_section_title.dart';
 import '../widgets/dashboard_header.dart';
+import '../widgets/dashboard_primary_cards.dart';
+import '../widgets/dashboard_upcoming_visits.dart';
 import '../widgets/quick_actions.dart';
-import '../widgets/today_schedule_card.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -15,6 +16,29 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDesktop =
         MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop;
+
+    final currentDate = DateFormat(
+      'EEEE, d MMMM',
+      context.locale.toLanguageTag(),
+    ).format(DateTime.now());
+
+    final upcomingVisits = [
+      DashboardUpcomingVisit(
+        timeLabel: '10:30',
+        patientName: 'Anna Brown',
+        appointmentType: 'dashboard.appointmentTypes.consultation'.tr(),
+      ),
+      DashboardUpcomingVisit(
+        timeLabel: '14:00',
+        patientName: 'Michael Wilson',
+        appointmentType: 'dashboard.appointmentTypes.treatment'.tr(),
+      ),
+      DashboardUpcomingVisit(
+        timeLabel: '16:30',
+        patientName: 'Emma Davis',
+        appointmentType: 'dashboard.appointmentTypes.followUp'.tr(),
+      ),
+    ];
 
     return Scaffold(
       body: SafeArea(
@@ -27,14 +51,26 @@ class DashboardPage extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.xl),
 
-              AppSectionTitle(
-                title: 'dashboard.todayAppointments'.tr(),
-                actionLabel: 'dashboard.viewAll'.tr(),
+              DashboardPrimaryCards(
+                nextVisitTime: '09:00',
+                patientName: 'John Smith',
+                appointmentType: 'dashboard.appointmentTypes.followUp'.tr(),
+                availableDateLabel: currentDate,
+                availableTimeRange: '11:00–11:30',
               ),
 
-              const SizedBox(height: AppSpacing.md),
+              if (isDesktop) ...[
+                const SizedBox(height: AppSpacing.xl),
 
-              const TodayScheduleCard(),
+                AppSectionTitle(
+                  title: 'dashboard.upcomingVisits'.tr(),
+                  actionLabel: 'dashboard.viewAll'.tr(),
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                DashboardUpcomingVisits(visits: upcomingVisits),
+              ],
 
               if (!isDesktop) ...[
                 const SizedBox(height: AppSpacing.xl),

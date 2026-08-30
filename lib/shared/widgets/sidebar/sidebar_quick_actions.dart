@@ -23,7 +23,7 @@ class SidebarQuickActions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           child: Text(
             'sidebar.quickActions'.tr(),
             style: theme.textTheme.labelLarge?.copyWith(
@@ -76,14 +76,14 @@ class _QuickActionItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.sm),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
+            horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
           ),
           child: Row(
             children: [
-              Icon(icon, color: colorScheme.primary),
+              Icon(icon, size: 22, color: colorScheme.primary),
 
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppSpacing.md),
 
               Expanded(
                 child: Text(

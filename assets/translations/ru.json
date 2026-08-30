@@ -4,6 +4,12 @@
     "greeting": "Доброе утро, {name}",
     "todayAppointments": "Сегодняшние приёмы",
     "viewAll": "Смотреть все",
+    "nextVisit": "Следующий приём",
+    "nextAvailableSlot": "Следующее свободное окно",
+    "upcomingVisits": "Ближайшие приёмы",
+    "bookPatient": "Записать пациента",
+    "openVisit": "Открыть приём",
+    "available": "Свободно",
     "quickActions": "Быстрые действия",
     "quickActionsItems": {
       "newPatient": {
