@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../app/theme/theme_mode_controller.dart';
+import '../../../profile/presentation/providers/doctor_profile_provider.dart';
 
 class DashboardHeader extends ConsumerWidget {
   const DashboardHeader({super.key});
@@ -15,6 +16,20 @@ class DashboardHeader extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final brightness = theme.brightness;
     final isDark = brightness == Brightness.dark;
+
+    final profileAsync = ref.watch(doctorProfileProvider);
+
+    final greeting = profileAsync.when(
+      data: (profile) {
+        if (profile == null) {
+          return 'dashboard.title'.tr();
+        }
+
+        return 'dashboard.greeting'.tr(namedArgs: {'name': profile.fullName});
+      },
+      loading: () => 'dashboard.title'.tr(),
+      error: (_, _) => 'dashboard.title'.tr(),
+    );
 
     final formattedDate = DateFormat(
       'EEEE, d MMMM',
@@ -28,10 +43,7 @@ class DashboardHeader extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'dashboard.greeting'.tr(namedArgs: const {'name': 'Dr. Smith'}),
-                style: AppTextStyles.headlineMedium,
-              ),
+              Text(greeting, style: AppTextStyles.headlineMedium),
 
               const SizedBox(height: AppSpacing.sm),
 

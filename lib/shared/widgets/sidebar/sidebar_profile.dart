@@ -1,17 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_radius.dart';
 import '../../../app/theme/app_spacing.dart';
+import '../../../features/profile/presentation/providers/doctor_profile_provider.dart';
 
-class SidebarProfile extends StatelessWidget {
+class SidebarProfile extends ConsumerWidget {
   const SidebarProfile({super.key, this.onTap});
 
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    final profile = ref
+        .watch(doctorProfileProvider)
+        .when(
+          data: (profile) => profile,
+          loading: () => null,
+          error: (_, _) => null,
+        );
+
+    final fullName = profile?.fullName ?? '—';
+    final specialty = profile?.specialty ?? '—';
+    final initials = _initials(profile?.fullName);
 
     return Material(
       color: colorScheme.surfaceContainerHighest,
@@ -33,12 +47,14 @@ class SidebarProfile extends StatelessWidget {
                 radius: 20,
                 backgroundColor: colorScheme.primaryContainer,
                 foregroundColor: colorScheme.onPrimaryContainer,
-                child: Text(
-                  'DS',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: initials == null
+                    ? const Icon(Icons.person_outline_rounded, size: 20)
+                    : Text(
+                        initials,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
 
               const SizedBox(width: AppSpacing.md),
@@ -48,7 +64,7 @@ class SidebarProfile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Dr. Smith',
+                      fullName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -59,7 +75,7 @@ class SidebarProfile extends StatelessWidget {
                     const SizedBox(height: 2),
 
                     Text(
-                      'Dentist',
+                      specialty,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelMedium?.copyWith(
@@ -82,5 +98,27 @@ class SidebarProfile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String? _initials(String? fullName) {
+    if (fullName == null) {
+      return null;
+    }
+
+    final parts = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+
+    if (parts.isEmpty) {
+      return null;
+    }
+
+    if (parts.length == 1) {
+      return parts.first[0].toUpperCase();
+    }
+
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 }
