@@ -7,7 +7,7 @@
     "nextVisit": "Next visit",
     "nextAvailableSlot": "Next available slot",
     "upcomingVisits": "Upcoming visits",
-    "bookPatient": "Book patient",
+    "bookPatient": "Schedule visit",
     "openVisit": "Open visit",
     "available": "Available",
     "quickActions": "Quick actions",
@@ -25,6 +25,70 @@
       "followUp": "Follow-up visit",
       "consultation": "Consultation",
       "treatment": "Treatment session"
+    }
+  },
+  "quickCreate": {
+    "newPatient": {
+      "title": "New patient",
+      "description": "Create a patient card now, then schedule a visit if needed."
+    },
+    "newVisit": {
+      "title": "New visit",
+      "description": "Choose a patient, clinic and a suitable time."
+    },
+    "nextAvailableSlot": {
+      "title": "Schedule this slot",
+      "description": "The visit time is ready. Add the patient and clinic to continue."
+    },
+    "sections": {
+      "patient": "Patient",
+      "clinic": "Clinic",
+      "visitTime": "Visit time",
+      "visitNote": "Visit note"
+    },
+    "patient": {
+      "search": "Search by name or phone",
+      "searchHint": "Start typing to find a patient",
+      "noResults": "No matching patients",
+      "createInline": "Create a new patient",
+      "change": "Change patient",
+      "name": "Patient name",
+      "phone": "Phone",
+      "note": "Patient note",
+      "noteHint": "Referral, concern or useful context"
+    },
+    "clinic": {
+      "select": "Select clinic",
+      "createInline": "Add a clinic",
+      "name": "Clinic name",
+      "noClinics": "No clinics yet. Add one without leaving this form."
+    },
+    "visit": {
+      "duration": "Duration",
+      "minutes": "{count} min",
+      "suggestedSlots": "Nearest available",
+      "manualTime": "Choose another time",
+      "selectedTime": "Selected time",
+      "note": "Visit note",
+      "noteHint": "Short operational context for the visit"
+    },
+    "actions": {
+      "savePatient": "Save patient",
+      "saveAndSchedule": "Save & schedule",
+      "createVisit": "Create visit",
+      "addClinic": "Add clinic",
+      "cancel": "Cancel",
+      "saving": "Saving..."
+    },
+    "validation": {
+      "required": "This field is required.",
+      "patientRequired": "Select or create a patient.",
+      "clinicRequired": "Select or create a clinic.",
+      "timeRequired": "Choose a visit time."
+    },
+    "errors": {
+      "loadFailed": "We couldn't load Quick Create data. Try again.",
+      "saveFailed": "We couldn't save this yet. Your entries are still here."
     }
   },
   "patients": {

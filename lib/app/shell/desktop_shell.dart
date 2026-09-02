@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/quick_create/domain/quick_create_context.dart';
+import '../../features/quick_create/domain/quick_create_intent.dart';
+import '../../features/quick_create/domain/quick_create_source.dart';
+import '../../features/quick_create/presentation/quick_create_presenter.dart';
 import '../../shared/widgets/sidebar/app_sidebar.dart';
 import '../navigation/app_navigation_items.dart';
 
@@ -33,10 +37,22 @@ class _DesktopShellState extends State<DesktopShell> {
               context.go(AppNavigationItems.items[index].path);
             },
             onNewPatient: () {
-              // TODO: Implement patient creation flow.
+              QuickCreatePresenter.show(
+                context,
+                const QuickCreateContext(
+                  intent: QuickCreateIntent.newPatient,
+                  source: QuickCreateSource.sidebarQuickAction,
+                ),
+              );
             },
             onNewVisit: () {
-              // TODO: Implement visit creation flow.
+              QuickCreatePresenter.show(
+                context,
+                const QuickCreateContext(
+                  intent: QuickCreateIntent.newVisit,
+                  source: QuickCreateSource.sidebarQuickAction,
+                ),
+              );
             },
           ),
           Expanded(child: widget.child),

@@ -8,7 +8,14 @@ import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_card.dart';
 
 class QuickActions extends StatelessWidget {
-  const QuickActions({super.key});
+  const QuickActions({
+    super.key,
+    required this.onNewPatient,
+    required this.onNewVisit,
+  });
+
+  final VoidCallback onNewPatient;
+  final VoidCallback onNewVisit;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +38,7 @@ class QuickActions extends StatelessWidget {
                 title: 'dashboard.quickActionsItems.newPatient.title'.tr(),
                 subtitle: 'dashboard.quickActionsItems.newPatient.subtitle'
                     .tr(),
-                onTap: () {},
+                onTap: onNewPatient,
               ),
             ),
             SizedBox(
@@ -40,7 +47,7 @@ class QuickActions extends StatelessWidget {
                 icon: Icons.calendar_month_outlined,
                 title: 'dashboard.quickActionsItems.newVisit.title'.tr(),
                 subtitle: 'dashboard.quickActionsItems.newVisit.subtitle'.tr(),
-                onTap: () {},
+                onTap: onNewVisit,
               ),
             ),
           ],
