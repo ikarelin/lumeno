@@ -1,6 +1,1 @@
-class Clinic {
-  const Clinic({required this.id, required this.name});
-
-  final String id;
-  final String name;
-}
+export '../../clinics/domain/clinic.dart';
