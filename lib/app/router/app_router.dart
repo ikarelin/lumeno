@@ -7,6 +7,7 @@ import '../../features/auth/presentation/controllers/auth_session_controller.dar
 import '../../features/auth/presentation/pages/sign_in_page.dart';
 import '../../features/auth/presentation/pages/sign_up_page.dart';
 import '../../features/calendar/presentation/calendar_page.dart';
+import '../../features/clinics/data/supabase_clinic_repository.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/files/presentation/files_page.dart';
 import '../../features/onboarding/data/supabase_doctor_setup_repository.dart';
@@ -27,6 +28,8 @@ final _authRepository = SupabaseAuthSessionRepository(Supabase.instance.client);
 final _doctorSetupRepository = SupabaseDoctorSetupRepository(
   Supabase.instance.client,
 );
+
+final _clinicRepository = SupabaseClinicRepository(Supabase.instance.client);
 
 final _authSessionController = AuthSessionController(_authRepository);
 
@@ -91,7 +94,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: AuthRoutePolicy.clinicSetupPath,
       builder: (context, state) {
-        return const ClinicSetupPage();
+        return ClinicSetupPage(repository: _clinicRepository);
       },
     ),
 

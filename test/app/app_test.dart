@@ -134,11 +134,11 @@ void main() {
 
     expect(tester.widget<FilledButton>(clinicContinueButton).onPressed, isNull);
 
-    final clinicField = find.byType(TextFormField);
+    final clinicFields = find.byType(TextFormField);
 
-    expect(clinicField, findsOneWidget);
+    expect(clinicFields, findsNWidgets(2));
 
-    await tester.enterText(clinicField, 'Some Clinic');
+    await tester.enterText(clinicFields.at(0), 'Some Clinic');
 
     await tester.pumpAndSettle();
 

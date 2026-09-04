@@ -124,7 +124,15 @@
     "appearanceDark": "Dark",
     "logOut": "Log out",
     "loggingOut": "Logging out...",
-    "logOutFailed": "We couldn't log you out. Please try again."
+    "logOutFailed": "We couldn't log you out. Please try again.",
+    "clinics": "Clinics",
+    "clinicsDescription": "Manage the clinics where you work.",
+    "addClinic": "Add clinic",
+    "defaultClinic": "Default",
+    "setDefaultClinic": "Set as default",
+    "setDefaultClinicFailed": "We couldn't set the default clinic. Please try again.",
+    "noClinics": "No clinics added yet.",
+    "clinicsLoadFailed": "We couldn't load your clinics. Please try again."
   },
   "onboarding": {
     "welcome": {
@@ -194,7 +202,10 @@
       "title": "Add your clinic",
       "description": "Add a clinic now or continue and set it up later.",
       "clinicName": "Clinic name",
+      "address": "Address (optional)",
       "continue": "Continue",
+      "saving": "Saving...",
+      "saveFailed": "We couldn't save your clinic. Please try again.",
       "addLater": "Add later"
     }
   }

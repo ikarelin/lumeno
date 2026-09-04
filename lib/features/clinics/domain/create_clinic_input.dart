@@ -6,7 +6,10 @@ part 'create_clinic_input.freezed.dart';
 abstract class CreateClinicInput with _$CreateClinicInput {
   const CreateClinicInput._();
 
-  const factory CreateClinicInput({required String name}) = _CreateClinicInput;
+  const factory CreateClinicInput({
+    required String name,
+    @Default('') String address,
+  }) = _CreateClinicInput;
 
   bool get isValid => name.trim().isNotEmpty;
 }

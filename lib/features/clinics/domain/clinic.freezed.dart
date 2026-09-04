@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Clinic {
 
- String get id; String get name;
+ String get id; String get name; String get address;
 /// Create a copy of Clinic
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $ClinicCopyWith<Clinic> get copyWith => _$ClinicCopyWithImpl<Clinic>(this as Cli
 @override
 bool operator ==(Object other) {
   final _this = this as Clinic;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Clinic&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Clinic&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.address, _this.address) || other.address == _this.address));
 }
 
 
 @override
 int get hashCode {
   final _this = this as Clinic;
-  return Object.hash(runtimeType,_this.id,_this.name);
+  return Object.hash(runtimeType,_this.id,_this.name,_this.address);
 }
 
 @override
 String toString() {
   final _this = this as Clinic;
-  return 'Clinic(id: ${_this.id}, name: ${_this.name})';
+  return 'Clinic(id: ${_this.id}, name: ${_this.name}, address: ${_this.address})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $ClinicCopyWith<$Res>  {
   factory $ClinicCopyWith(Clinic value, $Res Function(Clinic) _then) = _$ClinicCopyWithImpl;
 @useResult
 $Res call({
- String id, String name
+ String id, String name, String address
 });
 
 
@@ -68,10 +68,11 @@ class _$ClinicCopyWithImpl<$Res>
 
 /// Create a copy of Clinic
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? address = null,}) {
   return _then(Clinic(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,address: null == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -157,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String address)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Clinic() when $default != null:
-return $default(_that.id,_that.name);case _:
+return $default(_that.id,_that.name,_that.address);case _:
   return orElse();
 
 }
@@ -178,10 +179,10 @@ return $default(_that.id,_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String address)  $default,) {final _that = this;
 switch (_that) {
 case _Clinic():
-return $default(_that.id,_that.name);case _:
+return $default(_that.id,_that.name,_that.address);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -198,10 +199,10 @@ return $default(_that.id,_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String address)?  $default,) {final _that = this;
 switch (_that) {
 case _Clinic() when $default != null:
-return $default(_that.id,_that.name);case _:
+return $default(_that.id,_that.name,_that.address);case _:
   return null;
 
 }
@@ -213,11 +214,12 @@ return $default(_that.id,_that.name);case _:
 
 
 class _Clinic implements Clinic {
-  const _Clinic({required this.id, required this.name});
+  const _Clinic({required this.id, required this.name, this.address = ''});
   
 
 @override final  String id;
 @override final  String name;
+@override@JsonKey() final  String address;
 
 /// Create a copy of Clinic
 /// with the given fields replaced by the non-null parameter values.
@@ -229,18 +231,18 @@ _$ClinicCopyWith<_Clinic> get copyWith => __$ClinicCopyWithImpl<_Clinic>(this, _
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Clinic&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Clinic&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,name);
+    return Object.hash(runtimeType,id,name,address);
 }
 
 @override
 String toString() {
-    return 'Clinic(id: $id, name: $name)';
+    return 'Clinic(id: $id, name: $name, address: $address)';
 }
 
 
@@ -251,7 +253,7 @@ abstract mixin class _$ClinicCopyWith<$Res> implements $ClinicCopyWith<$Res> {
   factory _$ClinicCopyWith(_Clinic value, $Res Function(_Clinic) _then) = __$ClinicCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name
+ String id, String name, String address
 });
 
 
@@ -268,10 +270,11 @@ class __$ClinicCopyWithImpl<$Res>
 
 /// Create a copy of Clinic
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? address = null,}) {
   return _then(_Clinic(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,address: null == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

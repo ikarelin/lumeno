@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../app/theme/app_breakpoints.dart';
@@ -15,6 +16,7 @@ import '../../../../shared/widgets/app_language_selector.dart';
 import '../../../auth/presentation/providers/auth_repository_provider.dart';
 import '../../domain/doctor_profile.dart';
 import '../providers/doctor_profile_provider.dart';
+import '../widgets/profile_clinics_card.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -173,47 +175,50 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (widget.isDesktop)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final columnWidth = (constraints.maxWidth - AppSpacing.lg) / 2;
-
-              return Align(
-                alignment: Alignment.centerLeft,
-                child: SizedBox(
-                  width: columnWidth,
-                  child: _IdentityCard(
-                    profile: widget.profile,
-                    email: widget.email,
-                  ),
-                ),
-              );
-            },
-          )
-        else
+    if (!widget.isDesktop) {
+      return Column(
+        children: [
           _IdentityCard(profile: widget.profile, email: widget.email),
-        const SizedBox(height: AppSpacing.xl),
-        if (widget.isDesktop)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: AppSpacing.lg),
+          ProfileClinicsCard(onAddClinic: _openClinicSetup),
+          const SizedBox(height: AppSpacing.lg),
+          _buildProfessionalDetails(),
+          const SizedBox(height: AppSpacing.lg),
+          _buildPreferences(),
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(child: _buildProfessionalDetails()),
-              const SizedBox(width: AppSpacing.lg),
-              Expanded(child: _buildPreferences()),
-            ],
-          )
-        else
-          Column(
-            children: [
+              _IdentityCard(profile: widget.profile, email: widget.email),
+              const SizedBox(height: AppSpacing.lg),
               _buildProfessionalDetails(),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSpacing.lg),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ProfileClinicsCard(onAddClinic: _openClinicSetup),
               const SizedBox(height: AppSpacing.lg),
               _buildPreferences(),
             ],
           ),
+        ),
       ],
     );
+  }
+
+  void _openClinicSetup() {
+    context.go('/clinic-setup?from=profile');
   }
 
   Widget _buildProfessionalDetails() {

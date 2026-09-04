@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CreateClinicInput {
 
- String get name;
+ String get name; String get address;
 /// Create a copy of CreateClinicInput
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $CreateClinicInputCopyWith<CreateClinicInput> get copyWith => _$CreateClinicInpu
 @override
 bool operator ==(Object other) {
   final _this = this as CreateClinicInput;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreateClinicInput&&(identical(other.name, _this.name) || other.name == _this.name));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreateClinicInput&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.address, _this.address) || other.address == _this.address));
 }
 
 
 @override
 int get hashCode {
   final _this = this as CreateClinicInput;
-  return Object.hash(runtimeType,_this.name);
+  return Object.hash(runtimeType,_this.name,_this.address);
 }
 
 @override
 String toString() {
   final _this = this as CreateClinicInput;
-  return 'CreateClinicInput(name: ${_this.name})';
+  return 'CreateClinicInput(name: ${_this.name}, address: ${_this.address})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $CreateClinicInputCopyWith<$Res>  {
   factory $CreateClinicInputCopyWith(CreateClinicInput value, $Res Function(CreateClinicInput) _then) = _$CreateClinicInputCopyWithImpl;
 @useResult
 $Res call({
- String name
+ String name, String address
 });
 
 
@@ -68,9 +68,10 @@ class _$CreateClinicInputCopyWithImpl<$Res>
 
 /// Create a copy of CreateClinicInput
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? address = null,}) {
   return _then(CreateClinicInput(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,address: null == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -156,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String address)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CreateClinicInput() when $default != null:
-return $default(_that.name);case _:
+return $default(_that.name,_that.address);case _:
   return orElse();
 
 }
@@ -177,10 +178,10 @@ return $default(_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String address)  $default,) {final _that = this;
 switch (_that) {
 case _CreateClinicInput():
-return $default(_that.name);case _:
+return $default(_that.name,_that.address);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +198,10 @@ return $default(_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String address)?  $default,) {final _that = this;
 switch (_that) {
 case _CreateClinicInput() when $default != null:
-return $default(_that.name);case _:
+return $default(_that.name,_that.address);case _:
   return null;
 
 }
@@ -212,10 +213,11 @@ return $default(_that.name);case _:
 
 
 class _CreateClinicInput extends CreateClinicInput {
-  const _CreateClinicInput({required this.name}): super._();
+  const _CreateClinicInput({required this.name, this.address = ''}): super._();
   
 
 @override final  String name;
+@override@JsonKey() final  String address;
 
 /// Create a copy of CreateClinicInput
 /// with the given fields replaced by the non-null parameter values.
@@ -227,18 +229,18 @@ _$CreateClinicInputCopyWith<_CreateClinicInput> get copyWith => __$CreateClinicI
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreateClinicInput&&(identical(other.name, name) || other.name == name));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreateClinicInput&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,name);
+    return Object.hash(runtimeType,name,address);
 }
 
 @override
 String toString() {
-    return 'CreateClinicInput(name: $name)';
+    return 'CreateClinicInput(name: $name, address: $address)';
 }
 
 
@@ -249,7 +251,7 @@ abstract mixin class _$CreateClinicInputCopyWith<$Res> implements $CreateClinicI
   factory _$CreateClinicInputCopyWith(_CreateClinicInput value, $Res Function(_CreateClinicInput) _then) = __$CreateClinicInputCopyWithImpl;
 @override @useResult
 $Res call({
- String name
+ String name, String address
 });
 
 
@@ -266,9 +268,10 @@ class __$CreateClinicInputCopyWithImpl<$Res>
 
 /// Create a copy of CreateClinicInput
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? address = null,}) {
   return _then(_CreateClinicInput(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,address: null == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
