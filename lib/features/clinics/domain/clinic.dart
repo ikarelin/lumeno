@@ -1,6 +1,8 @@
-class Clinic {
-  const Clinic({required this.id, required this.name});
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  final String id;
-  final String name;
+part 'clinic.freezed.dart';
+
+@freezed
+abstract class Clinic with _$Clinic {
+  const factory Clinic({required String id, required String name}) = _Clinic;
 }

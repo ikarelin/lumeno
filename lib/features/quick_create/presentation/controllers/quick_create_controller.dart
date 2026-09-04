@@ -106,9 +106,9 @@ class QuickCreateController extends ChangeNotifier {
     _setState(
       _state.copyWith(
         patientDraft: _state.patientDraft.copyWith(
-          name: name,
-          phone: phone,
-          note: note,
+          name: name ?? state.patientDraft.name,
+          phone: phone ?? state.patientDraft.phone,
+          note: note ?? state.patientDraft.note,
         ),
         submitError: null,
       ),

@@ -1,19 +1,19 @@
-class Visit {
-  const Visit({
-    required this.id,
-    required this.patientId,
-    required this.clinicId,
-    required this.startsAt,
-    required this.durationMinutes,
-    this.note = '',
-  });
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  final String id;
-  final String patientId;
-  final String clinicId;
-  final DateTime startsAt;
-  final int durationMinutes;
-  final String note;
+part 'visit.freezed.dart';
+
+@freezed
+abstract class Visit with _$Visit {
+  const Visit._();
+
+  const factory Visit({
+    required String id,
+    required String patientId,
+    required String clinicId,
+    required DateTime startsAt,
+    required int durationMinutes,
+    @Default('') String note,
+  }) = _Visit;
 
   DateTime get endsAt => startsAt.add(Duration(minutes: durationMinutes));
 }

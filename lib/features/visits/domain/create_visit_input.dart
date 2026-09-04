@@ -1,17 +1,18 @@
-class CreateVisitInput {
-  const CreateVisitInput({
-    required this.patientId,
-    required this.clinicId,
-    required this.startsAt,
-    required this.durationMinutes,
-    this.note = '',
-  });
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  final String patientId;
-  final String clinicId;
-  final DateTime startsAt;
-  final int durationMinutes;
-  final String note;
+part 'create_visit_input.freezed.dart';
+
+@freezed
+abstract class CreateVisitInput with _$CreateVisitInput {
+  const CreateVisitInput._();
+
+  const factory CreateVisitInput({
+    required String patientId,
+    required String clinicId,
+    required DateTime startsAt,
+    required int durationMinutes,
+    @Default('') String note,
+  }) = _CreateVisitInput;
 
   bool get isValid =>
       patientId.trim().isNotEmpty &&

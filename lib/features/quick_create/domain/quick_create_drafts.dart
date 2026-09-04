@@ -1,25 +1,17 @@
-class PatientDraft {
-  const PatientDraft({this.name = '', this.phone = '', this.note = ''});
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  final String name;
-  final String phone;
-  final String note;
+part 'quick_create_drafts.freezed.dart';
 
-  PatientDraft copyWith({String? name, String? phone, String? note}) {
-    return PatientDraft(
-      name: name ?? this.name,
-      phone: phone ?? this.phone,
-      note: note ?? this.note,
-    );
-  }
+@freezed
+abstract class PatientDraft with _$PatientDraft {
+  const factory PatientDraft({
+    @Default('') String name,
+    @Default('') String phone,
+    @Default('') String note,
+  }) = _PatientDraft;
 }
 
-class ClinicDraft {
-  const ClinicDraft({this.name = ''});
-
-  final String name;
-
-  ClinicDraft copyWith({String? name}) {
-    return ClinicDraft(name: name ?? this.name);
-  }
+@freezed
+abstract class ClinicDraft with _$ClinicDraft {
+  const factory ClinicDraft({@Default('') String name}) = _ClinicDraft;
 }

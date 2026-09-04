@@ -1,22 +1,20 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
 import 'clinic.dart';
 import 'patient.dart';
 import 'quick_create_intent.dart';
 import 'quick_create_source.dart';
 
-class QuickCreateContext {
-  const QuickCreateContext({
-    required this.intent,
-    required this.source,
-    this.patient,
-    this.clinic,
-    this.startsAt,
-    this.durationMinutes,
-  });
+part 'quick_create_context.freezed.dart';
 
-  final QuickCreateIntent intent;
-  final QuickCreateSource source;
-  final Patient? patient;
-  final Clinic? clinic;
-  final DateTime? startsAt;
-  final int? durationMinutes;
+@freezed
+abstract class QuickCreateContext with _$QuickCreateContext {
+  const factory QuickCreateContext({
+    required QuickCreateIntent intent,
+    required QuickCreateSource source,
+    Patient? patient,
+    Clinic? clinic,
+    DateTime? startsAt,
+    int? durationMinutes,
+  }) = _QuickCreateContext;
 }

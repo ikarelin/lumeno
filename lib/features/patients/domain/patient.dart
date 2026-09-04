@@ -1,13 +1,13 @@
-class Patient {
-  const Patient({
-    required this.id,
-    required this.name,
-    this.phone = '',
-    this.note = '',
-  });
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  final String id;
-  final String name;
-  final String phone;
-  final String note;
+part 'patient.freezed.dart';
+
+@freezed
+abstract class Patient with _$Patient {
+  const factory Patient({
+    required String id,
+    required String name,
+    @Default('') String phone,
+    @Default('') String note,
+  }) = _Patient;
 }
