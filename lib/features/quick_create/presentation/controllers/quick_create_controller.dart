@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../clinics/domain/clinic_membership_repository.dart';
 import '../../domain/availability_slot.dart';
 import '../../domain/clinic.dart';
 import '../../domain/patient.dart';
@@ -36,10 +37,12 @@ class QuickCreateController extends ChangeNotifier {
     required this.clinicRepository,
     required this.visitRepository,
     required this.availabilityRepository,
+    this.clinicMembershipRepository,
   }) : _state = QuickCreateState.fromContext(context);
 
   final PatientRepository patientRepository;
   final ClinicRepository clinicRepository;
+  final ClinicMembershipRepository? clinicMembershipRepository;
   final VisitRepository visitRepository;
   final AvailabilityRepository availabilityRepository;
 
@@ -67,6 +70,7 @@ class QuickCreateController extends ChangeNotifier {
 
     try {
       final results = await patientRepository.searchPatients(query);
+
       _setState(
         _state.copyWith(patientResults: results, isSearchingPatients: false),
       );
@@ -81,8 +85,51 @@ class QuickCreateController extends ChangeNotifier {
     _setState(_state.copyWith(isLoadingClinics: true, submitError: null));
 
     try {
-      final clinics = await clinicRepository.fetchClinics();
-      _setState(_state.copyWith(clinics: clinics, isLoadingClinics: false));
+      final membershipRepository = clinicMembershipRepository;
+
+      if (membershipRepository == null) {
+        final clinics = await clinicRepository.fetchClinics();
+
+        _setState(_state.copyWith(clinics: clinics, isLoadingClinics: false));
+
+        return;
+      }
+
+      final memberships = await membershipRepository
+          .fetchActiveClinicMemberships();
+
+      final clinics = memberships
+          .map((membership) => membership.clinic)
+          .toList(growable: false);
+
+      var selectedClinic = _state.selectedClinic;
+
+      final selectedClinicIsActive =
+          selectedClinic != null &&
+          clinics.any((clinic) => clinic.id == selectedClinic!.id);
+
+      if (!selectedClinicIsActive) {
+        selectedClinic = null;
+
+        if (clinics.length == 1) {
+          selectedClinic = clinics.single;
+        } else if (clinics.length > 1) {
+          for (final membership in memberships) {
+            if (membership.isDefault) {
+              selectedClinic = membership.clinic;
+              break;
+            }
+          }
+        }
+      }
+
+      _setState(
+        _state.copyWith(
+          clinics: clinics,
+          selectedClinic: selectedClinic,
+          isLoadingClinics: false,
+        ),
+      );
     } catch (error) {
       _setState(_state.copyWith(isLoadingClinics: false, submitError: error));
     }
@@ -96,6 +143,7 @@ class QuickCreateController extends ChangeNotifier {
         from: DateTime.now(),
         durationMinutes: _state.durationMinutes,
       );
+
       _setState(_state.copyWith(suggestedSlots: slots, isLoadingSlots: false));
     } catch (error) {
       _setState(_state.copyWith(isLoadingSlots: false, submitError: error));
@@ -132,8 +180,18 @@ class QuickCreateController extends ChangeNotifier {
     _setState(_state.copyWith(isCreatingPatient: true));
   }
 
-  void hidePatientCreation() {
-    _setState(_state.copyWith(isCreatingPatient: false));
+  void cancelPatientCreation() {
+    _setState(
+      _state.copyWith(
+        isCreatingPatient: false,
+        patientDraft: _state.patientDraft.copyWith(
+          name: '',
+          phone: '',
+          note: '',
+        ),
+        submitError: null,
+      ),
+    );
   }
 
   void showClinicCreation() {
@@ -186,6 +244,7 @@ class QuickCreateController extends ChangeNotifier {
     _setState(
       _state.copyWith(durationMinutes: durationMinutes, submitError: null),
     );
+
     await loadSuggestedSlots();
   }
 
@@ -200,6 +259,7 @@ class QuickCreateController extends ChangeNotifier {
 
     try {
       final draft = _state.patientDraft;
+
       final patient = await patientRepository.createPatient(
         CreatePatientInput(
           name: draft.name,
@@ -223,6 +283,7 @@ class QuickCreateController extends ChangeNotifier {
       );
     } catch (error) {
       _setState(_state.copyWith(isSavingPatient: false, submitError: error));
+
       return null;
     }
   }
@@ -238,6 +299,7 @@ class QuickCreateController extends ChangeNotifier {
       final clinic = await clinicRepository.createClinic(
         CreateClinicInput(name: _state.clinicDraft.name),
       );
+
       _setState(
         _state.copyWith(
           selectedClinic: clinic,
@@ -246,9 +308,11 @@ class QuickCreateController extends ChangeNotifier {
           isSavingClinic: false,
         ),
       );
+
       return clinic;
     } catch (error) {
       _setState(_state.copyWith(isSavingClinic: false, submitError: error));
+
       return null;
     }
   }
@@ -270,16 +334,20 @@ class QuickCreateController extends ChangeNotifier {
           note: _state.visitNoteDraft,
         ),
       );
+
       _setState(_state.copyWith(isSavingVisit: false));
+
       return VisitCreatedResult(visit);
     } catch (error) {
       _setState(_state.copyWith(isSavingVisit: false, submitError: error));
+
       return null;
     }
   }
 
   void _setState(QuickCreateState value) {
     _state = value;
+
     if (!_disposed) {
       notifyListeners();
     }

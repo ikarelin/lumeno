@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lumeno/app/theme/lumeno_theme.dart';
+import 'package:lumeno/features/clinics/domain/clinic.dart';
+import 'package:lumeno/features/clinics/domain/clinic_membership.dart';
+import 'package:lumeno/features/clinics/domain/clinic_membership_repository.dart';
+import 'package:lumeno/features/clinics/domain/clinic_repository.dart';
+import 'package:lumeno/features/clinics/domain/create_clinic_input.dart';
+import 'package:lumeno/features/clinics/presentation/providers/clinic_provider.dart';
 import 'package:lumeno/features/quick_create/domain/quick_create_context.dart';
 import 'package:lumeno/features/quick_create/domain/quick_create_intent.dart';
 import 'package:lumeno/features/quick_create/domain/quick_create_source.dart';
@@ -16,6 +22,7 @@ void main() {
 
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
+
     await EasyLocalization.ensureInitialized();
   });
 
@@ -23,6 +30,7 @@ void main() {
     tester,
   ) async {
     await _setViewSize(tester, const Size(1280, 900));
+
     await _pumpLauncher(tester);
 
     await tester.tap(find.text('Open Quick Create'));
@@ -36,6 +44,7 @@ void main() {
     await tester.pumpAndSettle();
 
     tester.view.physicalSize = const Size(390, 844);
+
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Open Quick Create'));
@@ -48,6 +57,9 @@ void main() {
 
 Future<void> _pumpLauncher(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
+
+  final clinicRepository = _FakeClinicRepository();
+
   await tester.pumpWidget(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('ru')],
@@ -55,9 +67,18 @@ Future<void> _pumpLauncher(WidgetTester tester) async {
       fallbackLocale: const Locale('en'),
       startLocale: const Locale('en'),
       saveLocale: false,
-      child: const ProviderScope(child: _LauncherApp()),
+      child: ProviderScope(
+        overrides: [
+          clinicRepositoryProvider.overrideWithValue(clinicRepository),
+          clinicMembershipRepositoryProvider.overrideWithValue(
+            clinicRepository,
+          ),
+        ],
+        child: const _LauncherApp(),
+      ),
     ),
   );
+
   await tester.pump(const Duration(milliseconds: 200));
   await tester.pumpAndSettle();
 }
@@ -65,6 +86,7 @@ Future<void> _pumpLauncher(WidgetTester tester) async {
 Future<void> _setViewSize(WidgetTester tester, Size size) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
+
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 }
@@ -102,5 +124,28 @@ class _LauncherApp extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+class _FakeClinicRepository
+    implements ClinicRepository, ClinicMembershipRepository {
+  @override
+  Future<List<Clinic>> fetchClinics() async {
+    return const <Clinic>[];
+  }
+
+  @override
+  Future<List<ClinicMembership>> fetchActiveClinicMemberships() async {
+    return const <ClinicMembership>[];
+  }
+
+  @override
+  Future<Clinic> createClinic(CreateClinicInput input) {
+    throw UnsupportedError('Clinic creation is not used by this test.');
+  }
+
+  @override
+  Future<void> setDefaultClinic({required String clinicId}) {
+    throw UnsupportedError('Default clinic mutation is not used by this test.');
   }
 }

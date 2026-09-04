@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_breakpoints.dart';
 import '../../../app/theme/app_radius.dart';
 import '../../../shared/widgets/sidebar/app_sidebar.dart';
+import '../../clinics/presentation/providers/clinic_provider.dart';
 import '../domain/quick_create_context.dart';
 import '../domain/quick_create_intent.dart';
 import 'controllers/quick_create_controller.dart';
@@ -21,15 +22,21 @@ abstract final class QuickCreatePresenter {
     BuildContext context,
     QuickCreateContext quickCreateContext,
   ) async {
-    final store = ProviderScope.containerOf(
-      context,
-      listen: false,
-    ).read(quickCreateStoreProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
+
+    final store = container.read(quickCreateStoreProvider);
+
+    final clinicRepository = container.read(clinicRepositoryProvider);
+
+    final clinicMembershipRepository = container.read(
+      clinicMembershipRepositoryProvider,
+    );
 
     final controller = QuickCreateController(
       context: quickCreateContext,
       patientRepository: store,
-      clinicRepository: store,
+      clinicRepository: clinicRepository,
+      clinicMembershipRepository: clinicMembershipRepository,
       visitRepository: store,
       availabilityRepository: store,
     );

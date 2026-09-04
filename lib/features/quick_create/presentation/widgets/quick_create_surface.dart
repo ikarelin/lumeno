@@ -62,11 +62,14 @@ class _QuickCreateSurfaceState extends State<QuickCreateSurface> {
                       key: const Key('quick-create-visit-fields'),
                       child: Column(
                         children: [
-                          _ClinicSection(
-                            controller: widget.controller,
-                            state: state,
-                          ),
-                          const SizedBox(height: AppSpacing.md),
+                          if (state.isLoadingClinics ||
+                              state.clinics.length != 1) ...[
+                            _ClinicSection(
+                              controller: widget.controller,
+                              state: state,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
                           _VisitTimeSection(
                             controller: widget.controller,
                             state: state,
@@ -236,7 +239,9 @@ class _PatientSection extends StatelessWidget {
               for (final patient in state.patientResults.take(3))
                 _PatientResultTile(
                   patient: patient,
-                  onTap: () => controller.selectPatient(patient),
+                  onTap: () {
+                    controller.selectPatient(patient);
+                  },
                 ),
             const SizedBox(height: AppSpacing.sm),
             AppButton.secondary(
@@ -259,6 +264,16 @@ class _PatientSection extends StatelessWidget {
                       await controller.savePatient(continueToSchedule: true);
                     }
                   : null,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Align(
+              alignment: Alignment.center,
+              child: AppButton.text(
+                label: 'quickCreate.actions.cancel'.tr(),
+                onPressed: state.isBusy
+                    ? null
+                    : controller.cancelPatientCreation,
+              ),
             ),
           ],
         ],
@@ -403,6 +418,11 @@ class _ClinicSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final hasNoClinics = state.clinics.isEmpty;
+    final hasMultipleClinics = state.clinics.length > 1;
+
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
@@ -415,19 +435,20 @@ class _ClinicSection extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           if (state.isLoadingClinics)
             const Center(child: CircularProgressIndicator())
-          else if (state.clinics.isNotEmpty)
+          else if (hasMultipleClinics)
             DropdownButtonFormField<Clinic>(
               key: ValueKey(state.selectedClinic?.id),
               initialValue: state.selectedClinic,
+              isExpanded: true,
               decoration: _inputDecoration(
                 context,
                 label: 'quickCreate.clinic.select'.tr(),
               ),
               items: state.clinics
                   .map(
-                    (clinic) => DropdownMenuItem(
+                    (clinic) => DropdownMenuItem<Clinic>(
                       value: clinic,
-                      child: Text(clinic.name),
+                      child: Text(clinic.name, overflow: TextOverflow.ellipsis),
                     ),
                   )
                   .toList(),
@@ -439,40 +460,12 @@ class _ClinicSection extends StatelessWidget {
                       }
                     },
             )
-          else
+          else if (hasNoClinics)
             Text(
               'quickCreate.clinic.noClinics'.tr(),
               style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: colorScheme.onSurfaceVariant,
               ),
-            ),
-          const SizedBox(height: AppSpacing.md),
-          if (state.isCreatingClinic) ...[
-            TextFormField(
-              enabled: !state.isBusy,
-              textCapitalization: TextCapitalization.words,
-              decoration: _inputDecoration(
-                context,
-                label: 'quickCreate.clinic.name'.tr(),
-              ),
-              onChanged: controller.updateClinicDraft,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppButton.primary(
-              label: state.isSavingClinic
-                  ? 'quickCreate.actions.saving'.tr()
-                  : 'quickCreate.actions.addClinic'.tr(),
-              fullWidth: true,
-              onPressed: state.canSaveClinic && !state.isBusy
-                  ? controller.saveClinic
-                  : null,
-            ),
-          ] else
-            AppButton.secondary(
-              label: 'quickCreate.clinic.createInline'.tr(),
-              icon: Icons.add_business_outlined,
-              fullWidth: true,
-              onPressed: state.isBusy ? null : controller.showClinicCreation,
             ),
         ],
       ),
