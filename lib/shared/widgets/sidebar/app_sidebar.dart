@@ -16,6 +16,8 @@ class AppSidebar extends StatelessWidget {
     required this.onNewVisit,
   });
 
+  static const width = 280.0;
+
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onNewPatient;
@@ -26,7 +28,7 @@ class AppSidebar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      width: 280,
+      width: width,
       color: colorScheme.surface,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(

@@ -137,6 +137,7 @@ class _Header extends StatelessWidget {
       QuickCreateIntent.nextAvailableSlot =>
         'quickCreate.nextAvailableSlot.title',
     };
+
     final descriptionKey = switch (state.intent) {
       QuickCreateIntent.newPatient => 'quickCreate.newPatient.description',
       QuickCreateIntent.newVisit => 'quickCreate.newVisit.description',
@@ -285,7 +286,9 @@ class _PatientDraftFields extends StatelessWidget {
             context,
             label: 'quickCreate.patient.name'.tr(),
           ),
-          onChanged: (value) => controller.updatePatientDraft(name: value),
+          onChanged: (value) {
+            controller.updatePatientDraft(name: value);
+          },
         ),
         const SizedBox(height: AppSpacing.md),
         TextFormField(
@@ -297,7 +300,9 @@ class _PatientDraftFields extends StatelessWidget {
             context,
             label: 'quickCreate.patient.phone'.tr(),
           ),
-          onChanged: (value) => controller.updatePatientDraft(phone: value),
+          onChanged: (value) {
+            controller.updatePatientDraft(phone: value);
+          },
         ),
         const SizedBox(height: AppSpacing.md),
         TextFormField(
@@ -310,7 +315,9 @@ class _PatientDraftFields extends StatelessWidget {
             label: 'quickCreate.patient.note'.tr(),
             hintText: 'quickCreate.patient.noteHint'.tr(),
           ),
-          onChanged: (value) => controller.updatePatientDraft(note: value),
+          onChanged: (value) {
+            controller.updatePatientDraft(note: value);
+          },
         ),
       ],
     );
@@ -374,13 +381,16 @@ class _PatientResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.person_outline_rounded),
-      title: Text(patient.name),
-      subtitle: patient.phone.isEmpty ? null : Text(patient.phone),
-      trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: onTap,
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.person_outline_rounded),
+        title: Text(patient.name),
+        subtitle: patient.phone.isEmpty ? null : Text(patient.phone),
+        trailing: const Icon(Icons.chevron_right_rounded),
+        onTap: onTap,
+      ),
     );
   }
 }
@@ -509,7 +519,9 @@ class _VisitTimeSection extends StatelessWidget {
                   selected: state.durationMinutes == duration,
                   onSelected: state.isBusy
                       ? null
-                      : (_) => controller.setDurationMinutes(duration),
+                      : (_) {
+                          controller.setDurationMinutes(duration);
+                        },
                 ),
             ],
           ),
@@ -538,7 +550,9 @@ class _VisitTimeSection extends StatelessWidget {
                     _SlotChip(
                       slot: slot,
                       selected: state.selectedStartsAt == slot.startsAt,
-                      onSelected: () => controller.selectSlot(slot),
+                      onSelected: () {
+                        controller.selectSlot(slot);
+                      },
                     ),
                 ],
               ),
@@ -560,6 +574,7 @@ class _VisitTimeSection extends StatelessWidget {
   Future<void> _pickManualDateTime(BuildContext context) async {
     final now = DateTime.now();
     final current = state.selectedStartsAt ?? now;
+
     final date = await showDatePicker(
       context: context,
       initialDate: current.isBefore(now) ? now : current,
@@ -599,10 +614,14 @@ class _SelectedTimeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final locale = context.locale.toLanguageTag();
+
     final endsAt = startsAt.add(Duration(minutes: durationMinutes));
+
     final date = DateFormat('EEE, d MMM', locale).format(startsAt);
+
     final time =
-        '${DateFormat.Hm(locale).format(startsAt)} - ${DateFormat.Hm(locale).format(endsAt)}';
+        '${DateFormat.Hm(locale).format(startsAt)} - '
+        '${DateFormat.Hm(locale).format(endsAt)}';
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -648,6 +667,7 @@ class _SlotChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.toLanguageTag();
+
     final label = DateFormat('EEE HH:mm', locale).format(slot.startsAt);
 
     return ChoiceChip(
@@ -725,7 +745,9 @@ class _Footer extends StatelessWidget {
                           : 'quickCreate.actions.savePatient'.tr(),
                       fullWidth: true,
                       onPressed: state.canSavePatient && !state.isBusy
-                          ? () => _savePatient(continueToSchedule: false)
+                          ? () {
+                              _savePatient(continueToSchedule: false);
+                            }
                           : null,
                     ),
                   ),
@@ -737,7 +759,9 @@ class _Footer extends StatelessWidget {
                           : 'quickCreate.actions.saveAndSchedule'.tr(),
                       fullWidth: true,
                       onPressed: state.canSavePatient && !state.isBusy
-                          ? () => _savePatient(continueToSchedule: true)
+                          ? () {
+                              _savePatient(continueToSchedule: true);
+                            }
                           : null,
                     ),
                   ),
@@ -779,6 +803,7 @@ class _Footer extends StatelessWidget {
 
   Future<void> _saveVisit() async {
     final result = await controller.saveVisit();
+
     if (result != null) {
       onCompleted(result);
     }
@@ -847,6 +872,7 @@ InputDecoration _inputDecoration(
 }) {
   final theme = Theme.of(context);
   final colorScheme = theme.colorScheme;
+
   final border = OutlineInputBorder(
     borderRadius: BorderRadius.circular(AppRadius.lg),
     borderSide: BorderSide(color: colorScheme.outlineVariant),
