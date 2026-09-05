@@ -8,6 +8,7 @@ import '../../../app/theme/app_breakpoints.dart';
 import '../../../app/theme/app_radius.dart';
 import '../../../shared/widgets/sidebar/app_sidebar.dart';
 import '../../clinics/presentation/providers/clinic_provider.dart';
+import '../../patients/presentation/providers/patient_provider.dart';
 import '../domain/quick_create_context.dart';
 import '../domain/quick_create_intent.dart';
 import 'controllers/quick_create_controller.dart';
@@ -45,10 +46,17 @@ abstract final class QuickCreatePresenter {
       availabilityRepository: store,
     );
 
+    var wasSavingPatient = false;
     var wasSavingClinic = false;
 
     void handleControllerChanged() {
       final state = controller.state;
+
+      final patientCreationCompleted =
+          wasSavingPatient &&
+          !state.isSavingPatient &&
+          state.selectedPatient != null &&
+          state.submitError == null;
 
       final clinicCreationCompleted =
           wasSavingClinic &&
@@ -56,15 +64,18 @@ abstract final class QuickCreatePresenter {
           state.selectedClinic != null &&
           state.clinics.length == 1;
 
+      wasSavingPatient = state.isSavingPatient;
       wasSavingClinic = state.isSavingClinic;
 
-      if (!clinicCreationCompleted) {
-        return;
+      if (patientCreationCompleted) {
+        container.invalidate(patientsProvider);
       }
 
-      container
-        ..invalidate(clinicMembershipsProvider)
-        ..invalidate(clinicsProvider);
+      if (clinicCreationCompleted) {
+        container
+          ..invalidate(clinicMembershipsProvider)
+          ..invalidate(clinicsProvider);
+      }
     }
 
     controller.addListener(handleControllerChanged);
