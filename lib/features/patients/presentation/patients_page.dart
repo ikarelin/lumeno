@@ -31,6 +31,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
 
   String _query = '';
   bool _isPresentingQuickCreate = false;
+  String? _archivingPatientId;
 
   @override
   void dispose() {
@@ -64,7 +65,8 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                   _PatientsHeader(
                     isDesktop: isDesktop,
                     patientCount: patientCount,
-                    isBusy: _isPresentingQuickCreate,
+                    isBusy:
+                        _isPresentingQuickCreate || _archivingPatientId != null,
                     onAddPatient: _openNewPatient,
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -75,7 +77,10 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                         query: _query,
                         searchController: _searchController,
                         isDesktop: isDesktop,
-                        isQuickCreateBusy: _isPresentingQuickCreate,
+                        isInteractionBusy:
+                            _isPresentingQuickCreate ||
+                            _archivingPatientId != null,
+                        archivingPatientId: _archivingPatientId,
                         onSearchChanged: (value) {
                           setState(() {
                             _query = value;
@@ -84,6 +89,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                         onClearSearch: _clearSearch,
                         onAddPatient: _openNewPatient,
                         onNewVisit: _openNewVisit,
+                        onArchivePatient: _archivePatient,
                       );
                     },
                     loading: () {
@@ -118,7 +124,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
   }
 
   Future<void> _openNewPatient() async {
-    if (_isPresentingQuickCreate) {
+    if (_isPresentingQuickCreate || _archivingPatientId != null) {
       return;
     }
 
@@ -150,7 +156,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
   }
 
   Future<void> _openNewVisit(Patient patient) async {
-    if (_isPresentingQuickCreate) {
+    if (_isPresentingQuickCreate || _archivingPatientId != null) {
       return;
     }
 
@@ -171,6 +177,115 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
       if (mounted) {
         setState(() {
           _isPresentingQuickCreate = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _archivePatient(Patient patient) async {
+    if (_isPresentingQuickCreate || _archivingPatientId != null) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+
+        return AlertDialog(
+          title: Text(
+            'patients.archiveTitle'.tr(),
+            style: AppTextStyles.titleLarge,
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  patient.name,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'patients.archiveDescription'.tr(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          actions: [
+            AppButton.text(
+              label: 'patients.cancel'.tr(),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                foregroundColor: colorScheme.onError,
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: Text('patients.archiveConfirm'.tr()),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _archivingPatientId = patient.id;
+    });
+
+    try {
+      final repository = ref.read(patientManagementRepositoryProvider);
+
+      await repository.archivePatient(patientId: patient.id);
+
+      if (!mounted) {
+        return;
+      }
+
+      ref.invalidate(patientsProvider);
+
+      final messenger = ScaffoldMessenger.of(context);
+
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('patients.archived'.tr())));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      final messenger = ScaffoldMessenger.of(context);
+
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('patients.archiveFailed'.tr())));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _archivingPatientId = null;
         });
       }
     }
@@ -288,29 +403,33 @@ class _PatientsContent extends StatelessWidget {
     required this.query,
     required this.searchController,
     required this.isDesktop,
-    required this.isQuickCreateBusy,
+    required this.isInteractionBusy,
+    required this.archivingPatientId,
     required this.onSearchChanged,
     required this.onClearSearch,
     required this.onAddPatient,
     required this.onNewVisit,
+    required this.onArchivePatient,
   });
 
   final List<Patient> patients;
   final String query;
   final TextEditingController searchController;
   final bool isDesktop;
-  final bool isQuickCreateBusy;
+  final bool isInteractionBusy;
+  final String? archivingPatientId;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onClearSearch;
   final VoidCallback onAddPatient;
   final ValueChanged<Patient> onNewVisit;
+  final ValueChanged<Patient> onArchivePatient;
 
   @override
   Widget build(BuildContext context) {
     if (patients.isEmpty) {
       return _PatientsEmptyState(
         onAddPatient: onAddPatient,
-        isBusy: isQuickCreateBusy,
+        isBusy: isInteractionBusy,
       );
     }
 
@@ -346,14 +465,18 @@ class _PatientsContent extends StatelessWidget {
         else if (isDesktop)
           _DesktopPatientsList(
             patients: filteredPatients,
-            isQuickCreateBusy: isQuickCreateBusy,
+            isInteractionBusy: isInteractionBusy,
+            archivingPatientId: archivingPatientId,
             onNewVisit: onNewVisit,
+            onArchivePatient: onArchivePatient,
           )
         else
           _MobilePatientsList(
             patients: filteredPatients,
-            isQuickCreateBusy: isQuickCreateBusy,
+            isInteractionBusy: isInteractionBusy,
+            archivingPatientId: archivingPatientId,
             onNewVisit: onNewVisit,
+            onArchivePatient: onArchivePatient,
           ),
       ],
     );
@@ -401,13 +524,17 @@ class _PatientsContent extends StatelessWidget {
 class _DesktopPatientsList extends StatelessWidget {
   const _DesktopPatientsList({
     required this.patients,
-    required this.isQuickCreateBusy,
+    required this.isInteractionBusy,
+    required this.archivingPatientId,
     required this.onNewVisit,
+    required this.onArchivePatient,
   });
 
   final List<Patient> patients;
-  final bool isQuickCreateBusy;
+  final bool isInteractionBusy;
+  final String? archivingPatientId;
   final ValueChanged<Patient> onNewVisit;
+  final ValueChanged<Patient> onArchivePatient;
 
   @override
   Widget build(BuildContext context) {
@@ -422,9 +549,13 @@ class _DesktopPatientsList extends StatelessWidget {
           for (var index = 0; index < patients.length; index++) ...[
             _DesktopPatientRow(
               patient: patients[index],
-              isQuickCreateBusy: isQuickCreateBusy,
+              isInteractionBusy: isInteractionBusy,
+              isArchiving: archivingPatientId == patients[index].id,
               onNewVisit: () {
                 onNewVisit(patients[index]);
+              },
+              onArchive: () {
+                onArchivePatient(patients[index]);
               },
             ),
             if (index < patients.length - 1)
@@ -466,7 +597,7 @@ class _DesktopPatientsHeaderRow extends StatelessWidget {
             flex: 4,
             child: Text('patients.note'.tr().toUpperCase(), style: style),
           ),
-          const SizedBox(width: 48),
+          const SizedBox(width: 96),
         ],
       ),
     );
@@ -476,13 +607,17 @@ class _DesktopPatientsHeaderRow extends StatelessWidget {
 class _DesktopPatientRow extends StatelessWidget {
   const _DesktopPatientRow({
     required this.patient,
-    required this.isQuickCreateBusy,
+    required this.isInteractionBusy,
+    required this.isArchiving,
     required this.onNewVisit,
+    required this.onArchive,
   });
 
   final Patient patient;
-  final bool isQuickCreateBusy;
+  final bool isInteractionBusy;
+  final bool isArchiving;
   final VoidCallback onNewVisit;
+  final VoidCallback onArchive;
 
   @override
   Widget build(BuildContext context) {
@@ -539,11 +674,21 @@ class _DesktopPatientRow extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 48,
-            child: IconButton(
-              tooltip: 'dashboard.quickActionsItems.newVisit.title'.tr(),
-              onPressed: isQuickCreateBusy ? null : onNewVisit,
-              icon: const Icon(Icons.calendar_month_rounded),
+            width: 96,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  tooltip: 'dashboard.quickActionsItems.newVisit.title'.tr(),
+                  onPressed: isInteractionBusy ? null : onNewVisit,
+                  icon: const Icon(Icons.calendar_month_rounded),
+                ),
+                _PatientOverflowMenu(
+                  enabled: !isInteractionBusy,
+                  isArchiving: isArchiving,
+                  onArchive: onArchive,
+                ),
+              ],
             ),
           ),
         ],
@@ -555,13 +700,17 @@ class _DesktopPatientRow extends StatelessWidget {
 class _MobilePatientsList extends StatelessWidget {
   const _MobilePatientsList({
     required this.patients,
-    required this.isQuickCreateBusy,
+    required this.isInteractionBusy,
+    required this.archivingPatientId,
     required this.onNewVisit,
+    required this.onArchivePatient,
   });
 
   final List<Patient> patients;
-  final bool isQuickCreateBusy;
+  final bool isInteractionBusy;
+  final String? archivingPatientId;
   final ValueChanged<Patient> onNewVisit;
+  final ValueChanged<Patient> onArchivePatient;
 
   @override
   Widget build(BuildContext context) {
@@ -574,9 +723,13 @@ class _MobilePatientsList extends StatelessWidget {
           for (var index = 0; index < patients.length; index++) ...[
             _MobilePatientRow(
               patient: patients[index],
-              isQuickCreateBusy: isQuickCreateBusy,
+              isInteractionBusy: isInteractionBusy,
+              isArchiving: archivingPatientId == patients[index].id,
               onNewVisit: () {
                 onNewVisit(patients[index]);
+              },
+              onArchive: () {
+                onArchivePatient(patients[index]);
               },
             ),
             if (index < patients.length - 1)
@@ -596,13 +749,17 @@ class _MobilePatientsList extends StatelessWidget {
 class _MobilePatientRow extends StatelessWidget {
   const _MobilePatientRow({
     required this.patient,
-    required this.isQuickCreateBusy,
+    required this.isInteractionBusy,
+    required this.isArchiving,
     required this.onNewVisit,
+    required this.onArchive,
   });
 
   final Patient patient;
-  final bool isQuickCreateBusy;
+  final bool isInteractionBusy;
+  final bool isArchiving;
   final VoidCallback onNewVisit;
+  final VoidCallback onArchive;
 
   @override
   Widget build(BuildContext context) {
@@ -654,11 +811,82 @@ class _MobilePatientRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           IconButton(
             tooltip: 'dashboard.quickActionsItems.newVisit.title'.tr(),
-            onPressed: isQuickCreateBusy ? null : onNewVisit,
+            onPressed: isInteractionBusy ? null : onNewVisit,
             icon: const Icon(Icons.calendar_month_rounded),
+          ),
+          _PatientOverflowMenu(
+            enabled: !isInteractionBusy,
+            isArchiving: isArchiving,
+            onArchive: onArchive,
           ),
         ],
       ),
+    );
+  }
+}
+
+enum _PatientAction { archive }
+
+class _PatientOverflowMenu extends StatelessWidget {
+  const _PatientOverflowMenu({
+    required this.enabled,
+    required this.isArchiving,
+    required this.onArchive,
+  });
+
+  final bool enabled;
+  final bool isArchiving;
+  final VoidCallback onArchive;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (isArchiving) {
+      return const SizedBox(
+        width: 48,
+        height: 48,
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    return PopupMenuButton<_PatientAction>(
+      enabled: enabled,
+      tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+      onSelected: (action) {
+        switch (action) {
+          case _PatientAction.archive:
+            onArchive();
+        }
+      },
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem<_PatientAction>(
+            value: _PatientAction.archive,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.archive_outlined,
+                  size: 20,
+                  color: colorScheme.error,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'patients.archive'.tr(),
+                  style: TextStyle(color: colorScheme.error),
+                ),
+              ],
+            ),
+          ),
+        ];
+      },
+      icon: const Icon(Icons.more_vert_rounded),
     );
   }
 }
