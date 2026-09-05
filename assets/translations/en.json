@@ -92,7 +92,41 @@
     }
   },
   "patients": {
-    "title": "Patients"
+    "title": "Patients",
+    "description": "Manage patient records and contact details.",
+    "searchHint": "Search by name or phone",
+    "addPatient": "Add patient",
+
+    "emptyTitle": "No patients yet",
+    "emptyDescription": "Add your first patient to start managing visits and history.",
+    "noResults": "No results found",
+
+    "name": "Name",
+    "phone": "Phone",
+    "note": "Note",
+    "noteOptional": "Note (optional)",
+
+    "createTitle": "New patient",
+    "editTitle": "Edit patient",
+    "create": "Create patient",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "edit": "Edit",
+
+    "archive": "Archive",
+    "archiveTitle": "Archive patient?",
+    "archiveDescription": "The patient will disappear from the active list, but their data and history will be preserved.",
+    "archiveConfirm": "Archive",
+
+    "required": "This field is required.",
+    "loadFailed": "We couldn't load your patients. Please try again.",
+    "saveFailed": "We couldn't save the patient. Please try again.",
+    "archiveFailed": "We couldn't archive the patient. Please try again.",
+
+    "created": "Patient added.",
+    "updated": "Patient details updated.",
+    "archived": "Patient moved to archive."
   },
   "calendar": {
     "title": "Calendar"

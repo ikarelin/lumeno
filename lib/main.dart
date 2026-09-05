@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'core/network/supabase_config.dart';
+import 'features/patients/presentation/providers/patient_provider.dart';
+import 'features/quick_create/presentation/providers/quick_create_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +25,14 @@ Future<void> main() async {
       supportedLocales: const [Locale('en'), Locale('ru')],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
-      child: const ProviderScope(child: LumenoApp()),
+      child: ProviderScope(
+        overrides: [
+          quickCreatePatientRepositoryProvider.overrideWith((ref) {
+            return ref.watch(patientRepositoryProvider);
+          }),
+        ],
+        child: const LumenoApp(),
+      ),
     ),
   );
 }

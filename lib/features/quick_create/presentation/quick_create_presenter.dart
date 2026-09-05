@@ -26,6 +26,10 @@ abstract final class QuickCreatePresenter {
 
     final store = container.read(quickCreateStoreProvider);
 
+    final patientRepository = container.read(
+      quickCreatePatientRepositoryProvider,
+    );
+
     final clinicRepository = container.read(clinicRepositoryProvider);
 
     final clinicMembershipRepository = container.read(
@@ -34,7 +38,7 @@ abstract final class QuickCreatePresenter {
 
     final controller = QuickCreateController(
       context: quickCreateContext,
-      patientRepository: store,
+      patientRepository: patientRepository,
       clinicRepository: clinicRepository,
       clinicMembershipRepository: clinicMembershipRepository,
       visitRepository: store,
