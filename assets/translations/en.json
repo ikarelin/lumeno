@@ -134,6 +134,22 @@
     "noClinics": "No clinics added yet.",
     "clinicsLoadFailed": "We couldn't load your clinics. Please try again."
   },
+  "clinicManagement": {
+    "editClinic": "Edit clinic",
+    "deleteClinic": "Delete clinic",
+    "clinicName": "Clinic name",
+    "address": "Address (optional)",
+    "saveChanges": "Save changes",
+    "saving": "Saving...",
+    "updateFailed": "We couldn't update the clinic. Please try again.",
+    "deleteTitle": "Delete clinic?",
+    "deleteMessage": "This clinic will be removed from your active clinic list. Past visit history will be preserved.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "deleteFailed": "We couldn't delete the clinic. Please try again.",
+    "required": "Clinic name is required."
+  },
   "onboarding": {
     "welcome": {
       "title": "Welcome to Lumeno",

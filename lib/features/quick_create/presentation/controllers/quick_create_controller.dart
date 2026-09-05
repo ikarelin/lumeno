@@ -195,11 +195,27 @@ class QuickCreateController extends ChangeNotifier {
   }
 
   void showClinicCreation() {
-    _setState(_state.copyWith(isCreatingClinic: true));
+    if (_state.clinics.isNotEmpty ||
+        _state.selectedClinic != null ||
+        _state.isSavingClinic) {
+      return;
+    }
+
+    _setState(_state.copyWith(isCreatingClinic: true, submitError: null));
   }
 
   void hideClinicCreation() {
-    _setState(_state.copyWith(isCreatingClinic: false));
+    if (_state.isSavingClinic) {
+      return;
+    }
+
+    _setState(
+      _state.copyWith(
+        isCreatingClinic: false,
+        clinicDraft: _state.clinicDraft.copyWith(name: ''),
+        submitError: null,
+      ),
+    );
   }
 
   void selectPatient(Patient patient) {
@@ -288,24 +304,30 @@ class QuickCreateController extends ChangeNotifier {
     }
   }
 
-  Future<Clinic?> saveClinic() async {
-    if (_state.isSavingClinic || !_state.canSaveClinic) {
+  Future<Clinic?> saveClinic({String address = ''}) async {
+    if (_state.isSavingClinic ||
+        !_state.canSaveClinic ||
+        _state.clinics.isNotEmpty ||
+        _state.selectedClinic != null) {
       return null;
     }
 
     _setState(_state.copyWith(isSavingClinic: true, submitError: null));
 
     try {
+      final draft = _state.clinicDraft;
+
       final clinic = await clinicRepository.createClinic(
-        CreateClinicInput(name: _state.clinicDraft.name),
+        CreateClinicInput(name: draft.name, address: address),
       );
 
       _setState(
         _state.copyWith(
           selectedClinic: clinic,
-          clinics: [..._state.clinics, clinic],
+          clinics: [clinic],
           isCreatingClinic: false,
           isSavingClinic: false,
+          clinicDraft: draft.copyWith(name: ''),
         ),
       );
 

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/supabase_clinic_repository.dart';
 import '../../domain/clinic.dart';
+import '../../domain/clinic_management_repository.dart';
 import '../../domain/clinic_membership.dart';
 import '../../domain/clinic_membership_repository.dart';
 import '../../domain/clinic_repository.dart';
@@ -18,6 +19,12 @@ final clinicRepositoryProvider = Provider<ClinicRepository>((ref) {
 });
 
 final clinicMembershipRepositoryProvider = Provider<ClinicMembershipRepository>(
+  (ref) {
+    return ref.watch(_supabaseClinicRepositoryProvider);
+  },
+);
+
+final clinicManagementRepositoryProvider = Provider<ClinicManagementRepository>(
   (ref) {
     return ref.watch(_supabaseClinicRepositoryProvider);
   },

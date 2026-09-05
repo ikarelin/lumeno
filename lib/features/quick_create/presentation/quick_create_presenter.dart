@@ -41,6 +41,30 @@ abstract final class QuickCreatePresenter {
       availabilityRepository: store,
     );
 
+    var wasSavingClinic = false;
+
+    void handleControllerChanged() {
+      final state = controller.state;
+
+      final clinicCreationCompleted =
+          wasSavingClinic &&
+          !state.isSavingClinic &&
+          state.selectedClinic != null &&
+          state.clinics.length == 1;
+
+      wasSavingClinic = state.isSavingClinic;
+
+      if (!clinicCreationCompleted) {
+        return;
+      }
+
+      container
+        ..invalidate(clinicMembershipsProvider)
+        ..invalidate(clinicsProvider);
+    }
+
+    controller.addListener(handleControllerChanged);
+
     unawaited(controller.load());
 
     try {
@@ -50,7 +74,9 @@ abstract final class QuickCreatePresenter {
 
       return await _showMobile(context, controller);
     } finally {
-      controller.dispose();
+      controller
+        ..removeListener(handleControllerChanged)
+        ..dispose();
     }
   }
 

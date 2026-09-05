@@ -1,13 +1,18 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/clinic.dart';
+import '../domain/clinic_management_repository.dart';
 import '../domain/clinic_membership.dart';
 import '../domain/clinic_membership_repository.dart';
 import '../domain/clinic_repository.dart';
 import '../domain/create_clinic_input.dart';
+import '../domain/update_clinic_input.dart';
 
 class SupabaseClinicRepository
-    implements ClinicRepository, ClinicMembershipRepository {
+    implements
+        ClinicRepository,
+        ClinicMembershipRepository,
+        ClinicManagementRepository {
   SupabaseClinicRepository(this._client);
 
   final SupabaseClient _client;
@@ -122,6 +127,56 @@ class SupabaseClinicRepository
 
     await _client.rpc(
       'set_default_clinic',
+      params: {'p_clinic_id': normalizedClinicId},
+    );
+  }
+
+  @override
+  Future<Clinic> updateClinic(UpdateClinicInput input) async {
+    if (!input.isValid) {
+      throw ArgumentError('Clinic id and name are required.');
+    }
+
+    final user = _client.auth.currentUser;
+
+    if (user == null) {
+      throw StateError('Cannot update a clinic without an authenticated user.');
+    }
+
+    final address = input.address.trim();
+
+    final response = await _client.rpc(
+      'update_clinic',
+      params: {
+        'p_clinic_id': input.clinicId.trim(),
+        'p_name': input.name.trim(),
+        'p_address': address.isEmpty ? null : address,
+      },
+    );
+
+    if (response is! Map) {
+      throw StateError('Unexpected response from update_clinic.');
+    }
+
+    return _mapClinic(Map<String, dynamic>.from(response));
+  }
+
+  @override
+  Future<void> archiveClinicMembership({required String clinicId}) async {
+    final user = _client.auth.currentUser;
+
+    if (user == null) {
+      throw StateError('Cannot delete a clinic without an authenticated user.');
+    }
+
+    final normalizedClinicId = clinicId.trim();
+
+    if (normalizedClinicId.isEmpty) {
+      throw ArgumentError('Clinic id is required.');
+    }
+
+    await _client.rpc(
+      'archive_clinic_membership',
       params: {'p_clinic_id': normalizedClinicId},
     );
   }
