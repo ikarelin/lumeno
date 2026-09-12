@@ -25,7 +25,14 @@ class DashboardHeader extends ConsumerWidget {
           return 'dashboard.title'.tr();
         }
 
-        return 'dashboard.greeting'.tr(namedArgs: {'name': profile.fullName});
+        final hour = DateTime.now().hour;
+        final greetingKey = switch (hour) {
+          >= 5 && < 12 => 'dashboard.greetingMorning',
+          >= 12 && < 18 => 'dashboard.greetingAfternoon',
+          _ => 'dashboard.greetingEvening',
+        };
+
+        return greetingKey.tr(namedArgs: {'name': profile.fullName});
       },
       loading: () => 'dashboard.title'.tr(),
       error: (_, _) => 'dashboard.title'.tr(),
