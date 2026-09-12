@@ -206,6 +206,13 @@
     "noClinics": "Клиники пока не добавлены.",
     "clinicsLoadFailed": "Не удалось загрузить клиники. Попробуйте ещё раз."
   },
+  "mobileShell": {
+    "openMenu": "Открыть меню",
+    "closeMenu": "Закрыть меню",
+    "account": "Аккаунт",
+    "profile": "Профиль и настройки",
+    "logOut": "Выйти"
+  },
   "clinicManagement": {
     "editClinic": "Редактировать клинику",
     "deleteClinic": "Удалить клинику",

@@ -199,6 +199,13 @@
     "noClinics": "No clinics added yet.",
     "clinicsLoadFailed": "We couldn't load your clinics. Please try again."
   },
+  "mobileShell": {
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "account": "Account",
+    "profile": "Profile & settings",
+    "logOut": "Log out"
+  },
   "clinicManagement": {
     "editClinic": "Edit clinic",
     "deleteClinic": "Delete clinic",
