@@ -199,6 +199,10 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
           _buildScheduleDefaults(),
           const SizedBox(height: AppSpacing.lg),
           _buildPreferences(),
+          const SizedBox(height: AppSpacing.lg),
+          _buildProfileActions(),
+          const SizedBox(height: AppSpacing.lg),
+          _buildAccount(),
         ],
       );
     }
@@ -226,6 +230,10 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
               ProfileClinicsCard(onAddClinic: _openClinicSetup),
               const SizedBox(height: AppSpacing.lg),
               _buildPreferences(),
+              const SizedBox(height: AppSpacing.lg),
+              _buildProfileActions(),
+              const SizedBox(height: AppSpacing.lg),
+              _buildAccount(),
             ],
           ),
         ),
@@ -484,33 +492,70 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
                 suffixIcon: const Icon(Icons.lock_outline_rounded),
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  AppButton.primary(
-                    label: _isSaving
-                        ? 'profile.saving'.tr()
-                        : 'profile.saveChanges'.tr(),
-                    fullWidth: !widget.isDesktop,
-                    onPressed: _isBusy ? null : _save,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  AppButton.secondary(
-                    label: _isLoggingOut
-                        ? 'profile.loggingOut'.tr()
-                        : 'profile.logOut'.tr(),
-                    icon: Icons.logout_rounded,
-                    fullWidth: !widget.isDesktop,
-                    onPressed: _isBusy ? null : _logOut,
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileActions() {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionHeader(
+            icon: Icons.check_circle_outline_rounded,
+            title: 'profile.profileActions'.tr(),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'profile.profileActionsDescription'.tr(),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppButton.primary(
+            label: _isSaving
+                ? 'profile.saving'.tr()
+                : 'profile.saveChanges'.tr(),
+            icon: Icons.save_outlined,
+            fullWidth: true,
+            onPressed: _isBusy ? null : _save,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccount() {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionHeader(
+            icon: Icons.manage_accounts_outlined,
+            title: 'profile.account'.tr(),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            widget.email,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppButton.secondary(
+            label: _isLoggingOut
+                ? 'profile.loggingOut'.tr()
+                : 'profile.logOut'.tr(),
+            icon: Icons.logout_rounded,
+            fullWidth: true,
+            onPressed: _isBusy ? null : _logOut,
+          ),
+        ],
       ),
     );
   }

@@ -29,7 +29,8 @@ class DashboardHeader extends ConsumerWidget {
         final greetingKey = switch (hour) {
           >= 5 && < 12 => 'dashboard.greetingMorning',
           >= 12 && < 18 => 'dashboard.greetingAfternoon',
-          _ => 'dashboard.greetingEvening',
+          >= 18 => 'dashboard.greetingEvening',
+          _ => 'dashboard.greetingNight',
         };
 
         return greetingKey.tr(namedArgs: {'name': profile.fullName});
