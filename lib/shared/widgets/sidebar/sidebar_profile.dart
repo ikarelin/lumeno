@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app/theme/app_radius.dart';
 import '../../../app/theme/app_spacing.dart';
+import '../../../features/auth/domain/auth_user_metadata.dart';
 import '../../../features/profile/presentation/providers/doctor_profile_provider.dart';
 
 class SidebarProfile extends ConsumerWidget {
@@ -21,17 +23,24 @@ class SidebarProfile extends ConsumerWidget {
     final isSelected =
         currentPath == '/profile' || currentPath.startsWith('/profile/');
 
-    final profile = ref
-        .watch(doctorProfileProvider)
-        .when(
-          data: (profile) => profile,
-          loading: () => null,
-          error: (_, _) => null,
-        );
+    final profileState = ref.watch(doctorProfileProvider);
+    final profile = profileState.when(
+      data: (profile) => profile,
+      loading: () => null,
+      error: (_, _) => null,
+    );
+    final user = Supabase.instance.client.auth.currentUser;
+    final metadata = user?.userMetadata;
 
-    final fullName = profile?.fullName ?? '—';
-    final specialty = profile?.specialty ?? '—';
-    final initials = _initials(profile?.fullName);
+    final fullName =
+        profile?.fullName ??
+        metadata?[AuthUserMetadata.doctorNameKey] as String? ??
+        '—';
+    final specialty =
+        profile?.specialty ??
+        metadata?[AuthUserMetadata.specialtyKey] as String? ??
+        '—';
+    final initials = _initials(fullName);
 
     final backgroundColor = isSelected
         ? colorScheme.primaryContainer

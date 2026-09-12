@@ -131,6 +131,13 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
   late final TextEditingController _nameController;
   late final TextEditingController _specialtyController;
 
+  int _defaultDurationMinutes = 30;
+  late List<int> _workingDays;
+  String _workdayStart = '09:00';
+  String _workdayEnd = '18:00';
+  String? _breakStart = '13:00';
+  String? _breakEnd = '14:00';
+
   bool _isSaving = false;
   bool _isLoggingOut = false;
 
@@ -147,6 +154,7 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
     _specialtyController = TextEditingController(
       text: widget.profile?.specialty ?? '',
     );
+    _syncSchedule(widget.profile);
   }
 
   @override
@@ -162,6 +170,10 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
 
     if (oldProfile?.specialty != newProfile?.specialty) {
       _specialtyController.text = newProfile?.specialty ?? '';
+    }
+
+    if (oldProfile != newProfile) {
+      _syncSchedule(newProfile);
     }
   }
 
@@ -184,6 +196,8 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
           const SizedBox(height: AppSpacing.lg),
           _buildProfessionalDetails(),
           const SizedBox(height: AppSpacing.lg),
+          _buildScheduleDefaults(),
+          const SizedBox(height: AppSpacing.lg),
           _buildPreferences(),
         ],
       );
@@ -199,6 +213,8 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
               _IdentityCard(profile: widget.profile, email: widget.email),
               const SizedBox(height: AppSpacing.lg),
               _buildProfessionalDetails(),
+              const SizedBox(height: AppSpacing.lg),
+              _buildScheduleDefaults(),
             ],
           ),
         ),
@@ -219,6 +235,206 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
 
   void _openClinicSetup() {
     context.go('/clinic-setup?from=profile');
+  }
+
+  void _syncSchedule(DoctorProfile? profile) {
+    _defaultDurationMinutes = profile?.defaultDurationMinutes ?? 30;
+    _workingDays = List<int>.from(
+      profile?.workingDays ?? const [1, 2, 3, 4, 5],
+    );
+    _workdayStart = profile?.workdayStart ?? '09:00';
+    _workdayEnd = profile?.workdayEnd ?? '18:00';
+    _breakStart = profile?.breakStart ?? '13:00';
+    _breakEnd = profile?.breakEnd ?? '14:00';
+  }
+
+  Widget _buildScheduleDefaults() {
+    final durations = <int>[15, 30, 45, 60, 90, 120];
+    final dayLabels = <String>[
+      'profile.monday'.tr(),
+      'profile.tuesday'.tr(),
+      'profile.wednesday'.tr(),
+      'profile.thursday'.tr(),
+      'profile.friday'.tr(),
+      'profile.saturday'.tr(),
+      'profile.sunday'.tr(),
+    ];
+
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionHeader(
+            icon: Icons.schedule_rounded,
+            title: 'profile.scheduleDefaults'.tr(),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'profile.scheduleDefaultsDescription'.tr(),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          DropdownButtonFormField<int>(
+            initialValue: _defaultDurationMinutes,
+            decoration: _inputDecoration(label: 'profile.defaultDuration'.tr()),
+            items: durations
+                .map(
+                  (duration) => DropdownMenuItem(
+                    value: duration,
+                    child: Text('$duration ${'profile.minutes'.tr()}'),
+                  ),
+                )
+                .toList(),
+            onChanged: _isBusy
+                ? null
+                : (value) {
+                    if (value != null) {
+                      setState(() => _defaultDurationMinutes = value);
+                    }
+                  },
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text('profile.workingDays'.tr(), style: AppTextStyles.bodyMedium),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: List.generate(dayLabels.length, (index) {
+              final day = index + 1;
+              return FilterChip(
+                label: Text(dayLabels[index]),
+                selected: _workingDays.contains(day),
+                onSelected: _isBusy
+                    ? null
+                    : (selected) {
+                        setState(() {
+                          if (selected) {
+                            _workingDays = [..._workingDays, day]..sort();
+                          } else if (_workingDays.length > 1) {
+                            _workingDays = _workingDays
+                                .where((value) => value != day)
+                                .toList();
+                          }
+                        });
+                      },
+              );
+            }),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: _timeButton(
+                  label: 'profile.workdayStart'.tr(),
+                  value: _workdayStart,
+                  onPressed: () => _selectTime(
+                    initial: _workdayStart,
+                    onSelected: (value) =>
+                        setState(() => _workdayStart = value),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: _timeButton(
+                  label: 'profile.workdayEnd'.tr(),
+                  value: _workdayEnd,
+                  onPressed: () => _selectTime(
+                    initial: _workdayEnd,
+                    onSelected: (value) => setState(() => _workdayEnd = value),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _timeButton(
+                  label: 'profile.breakStart'.tr(),
+                  value: _breakStart ?? 'profile.notSet'.tr(),
+                  onPressed: () => _selectTime(
+                    initial: _breakStart ?? '13:00',
+                    onSelected: (value) => setState(() => _breakStart = value),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: _timeButton(
+                  label: 'profile.breakEnd'.tr(),
+                  value: _breakEnd ?? 'profile.notSet'.tr(),
+                  onPressed: () => _selectTime(
+                    initial: _breakEnd ?? '14:00',
+                    onSelected: (value) => setState(() => _breakEnd = value),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _timeButton({
+    required String label,
+    required String value,
+    required VoidCallback onPressed,
+  }) {
+    return OutlinedButton(
+      onPressed: _isBusy ? null : onPressed,
+      style: OutlinedButton.styleFrom(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.labelMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(value, style: AppTextStyles.bodyMedium),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _selectTime({
+    required String initial,
+    required ValueChanged<String> onSelected,
+  }) async {
+    final parts = initial.split(':');
+    final initialTime = TimeOfDay(
+      hour: int.tryParse(parts.first) ?? 9,
+      minute: int.tryParse(parts.last) ?? 0,
+    );
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+
+    onSelected(
+      '${picked.hour.toString().padLeft(2, '0')}:'
+      '${picked.minute.toString().padLeft(2, '0')}',
+    );
   }
 
   Widget _buildProfessionalDetails() {
@@ -410,6 +626,12 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
       await repository.saveCurrentProfile(
         fullName: _nameController.text,
         specialty: _specialtyController.text,
+        defaultDurationMinutes: _defaultDurationMinutes,
+        workingDays: _workingDays,
+        workdayStart: _workdayStart,
+        workdayEnd: _workdayEnd,
+        breakStart: _breakStart,
+        breakEnd: _breakEnd,
       );
 
       if (!mounted) {
