@@ -103,6 +103,9 @@
 
     "name": "Имя",
     "phone": "Телефон",
+    "email": "Email",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
     "note": "Заметка",
     "noteOptional": "Заметка (необязательно)",
 
@@ -110,9 +113,21 @@
     "editTitle": "Редактировать пациента",
     "create": "Создать пациента",
     "save": "Сохранить",
+    "saveChanges": "Сохранить изменения",
     "saving": "Сохраняем…",
     "cancel": "Отмена",
     "edit": "Редактировать",
+
+    "workspace": "Карта пациента",
+    "contactDetails": "Контактные данные",
+    "preferredContact": "Предпочтительные способы связи",
+    "preferred": "Предпочтительно",
+    "whatsappAvailable": "Доступен в WhatsApp",
+    "whatsappDescription": "Используется основной номер телефона пациента.",
+    "newVisit": "Новый приём",
+    "notFound": "Пациент не найден",
+    "notFoundDescription": "Возможно, пациент был архивирован или больше недоступен.",
+    "retry": "Повторить",
 
     "archive": "Архивировать",
     "archiveTitle": "Архивировать пациента?",

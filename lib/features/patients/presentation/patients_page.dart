@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_breakpoints.dart';
 import '../../../app/theme/app_radius.dart';
@@ -625,73 +626,80 @@ class _DesktopPatientRow extends StatelessWidget {
 
     final note = patient.note.trim();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 4,
-            child: Row(
-              children: [
-                _PatientAvatar(name: patient.name),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    patient.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
+    return InkWell(
+      onTap: isInteractionBusy
+          ? null
+          : () {
+              context.push('/patients/${patient.id}');
+            },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 4,
+              child: Row(
+                children: [
+                  _PatientAvatar(name: patient.name),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      patient.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              patient.phone,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                ],
               ),
             ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Text(
-              note.isEmpty ? '—' : note,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: colorScheme.onSurfaceVariant,
+            Expanded(
+              flex: 3,
+              child: Text(
+                patient.phone,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
-          ),
-          SizedBox(
-            width: 96,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  tooltip: 'dashboard.quickActionsItems.newVisit.title'.tr(),
-                  onPressed: isInteractionBusy ? null : onNewVisit,
-                  icon: const Icon(Icons.calendar_month_rounded),
+            Expanded(
+              flex: 4,
+              child: Text(
+                note.isEmpty ? '—' : note,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
-                _PatientOverflowMenu(
-                  enabled: !isInteractionBusy,
-                  isArchiving: isArchiving,
-                  onArchive: onArchive,
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            SizedBox(
+              width: 96,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    tooltip: 'dashboard.quickActionsItems.newVisit.title'.tr(),
+                    onPressed: isInteractionBusy ? null : onNewVisit,
+                    icon: const Icon(Icons.calendar_month_rounded),
+                  ),
+                  _PatientOverflowMenu(
+                    enabled: !isInteractionBusy,
+                    isArchiving: isArchiving,
+                    onArchive: onArchive,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -767,59 +775,66 @@ class _MobilePatientRow extends StatelessWidget {
 
     final note = patient.note.trim();
 
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _PatientAvatar(name: patient.name),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  patient.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  patient.phone,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                if (note.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.xs),
+    return InkWell(
+      onTap: isInteractionBusy
+          ? null
+          : () {
+              context.push('/patients/${patient.id}');
+            },
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _PatientAvatar(name: patient.name),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    note,
+                    patient.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: colorScheme.onSurfaceVariant),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    patient.phone,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (note.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      note,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          IconButton(
-            tooltip: 'dashboard.quickActionsItems.newVisit.title'.tr(),
-            onPressed: isInteractionBusy ? null : onNewVisit,
-            icon: const Icon(Icons.calendar_month_rounded),
-          ),
-          _PatientOverflowMenu(
-            enabled: !isInteractionBusy,
-            isArchiving: isArchiving,
-            onArchive: onArchive,
-          ),
-        ],
+            const SizedBox(width: AppSpacing.sm),
+            IconButton(
+              tooltip: 'dashboard.quickActionsItems.newVisit.title'.tr(),
+              onPressed: isInteractionBusy ? null : onNewVisit,
+              icon: const Icon(Icons.calendar_month_rounded),
+            ),
+            _PatientOverflowMenu(
+              enabled: !isInteractionBusy,
+              isArchiving: isArchiving,
+              onArchive: onArchive,
+            ),
+          ],
+        ),
       ),
     );
   }

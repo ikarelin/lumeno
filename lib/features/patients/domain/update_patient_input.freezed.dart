@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UpdatePatientInput {
 
- String get patientId; String get name; String get phone; String get note;
+ String get patientId; String get name; String get phone; String get email; String get telegram; bool get whatsappAvailable; Set<PatientContactChannel> get preferredContactChannels; String get note;
 /// Create a copy of UpdatePatientInput
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $UpdatePatientInputCopyWith<UpdatePatientInput> get copyWith => _$UpdatePatientI
 @override
 bool operator ==(Object other) {
   final _this = this as UpdatePatientInput;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UpdatePatientInput&&(identical(other.patientId, _this.patientId) || other.patientId == _this.patientId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.phone, _this.phone) || other.phone == _this.phone)&&(identical(other.note, _this.note) || other.note == _this.note));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UpdatePatientInput&&(identical(other.patientId, _this.patientId) || other.patientId == _this.patientId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.phone, _this.phone) || other.phone == _this.phone)&&(identical(other.email, _this.email) || other.email == _this.email)&&(identical(other.telegram, _this.telegram) || other.telegram == _this.telegram)&&(identical(other.whatsappAvailable, _this.whatsappAvailable) || other.whatsappAvailable == _this.whatsappAvailable)&&const DeepCollectionEquality().equals(other.preferredContactChannels, _this.preferredContactChannels)&&(identical(other.note, _this.note) || other.note == _this.note));
 }
 
 
 @override
 int get hashCode {
   final _this = this as UpdatePatientInput;
-  return Object.hash(runtimeType,_this.patientId,_this.name,_this.phone,_this.note);
+  return Object.hash(runtimeType,_this.patientId,_this.name,_this.phone,_this.email,_this.telegram,_this.whatsappAvailable,const DeepCollectionEquality().hash(_this.preferredContactChannels),_this.note);
 }
 
 @override
 String toString() {
   final _this = this as UpdatePatientInput;
-  return 'UpdatePatientInput(patientId: ${_this.patientId}, name: ${_this.name}, phone: ${_this.phone}, note: ${_this.note})';
+  return 'UpdatePatientInput(patientId: ${_this.patientId}, name: ${_this.name}, phone: ${_this.phone}, email: ${_this.email}, telegram: ${_this.telegram}, whatsappAvailable: ${_this.whatsappAvailable}, preferredContactChannels: ${_this.preferredContactChannels}, note: ${_this.note})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $UpdatePatientInputCopyWith<$Res>  {
   factory $UpdatePatientInputCopyWith(UpdatePatientInput value, $Res Function(UpdatePatientInput) _then) = _$UpdatePatientInputCopyWithImpl;
 @useResult
 $Res call({
- String patientId, String name, String phone, String note
+ String patientId, String name, String phone, String email, String telegram, bool whatsappAvailable, Set<PatientContactChannel> preferredContactChannels, String note
 });
 
 
@@ -68,12 +68,16 @@ class _$UpdatePatientInputCopyWithImpl<$Res>
 
 /// Create a copy of UpdatePatientInput
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? patientId = null,Object? name = null,Object? phone = null,Object? note = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? patientId = null,Object? name = null,Object? phone = null,Object? email = null,Object? telegram = null,Object? whatsappAvailable = null,Object? preferredContactChannels = null,Object? note = null,}) {
   return _then(UpdatePatientInput(
 patientId: null == patientId ? _self.patientId : patientId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,phone: null == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
-as String,note: null == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
+as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,telegram: null == telegram ? _self.telegram : telegram // ignore: cast_nullable_to_non_nullable
+as String,whatsappAvailable: null == whatsappAvailable ? _self.whatsappAvailable : whatsappAvailable // ignore: cast_nullable_to_non_nullable
+as bool,preferredContactChannels: null == preferredContactChannels ? _self.preferredContactChannels : preferredContactChannels // ignore: cast_nullable_to_non_nullable
+as Set<PatientContactChannel>,note: null == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -159,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String patientId,  String name,  String phone,  String note)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String patientId,  String name,  String phone,  String email,  String telegram,  bool whatsappAvailable,  Set<PatientContactChannel> preferredContactChannels,  String note)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UpdatePatientInput() when $default != null:
-return $default(_that.patientId,_that.name,_that.phone,_that.note);case _:
+return $default(_that.patientId,_that.name,_that.phone,_that.email,_that.telegram,_that.whatsappAvailable,_that.preferredContactChannels,_that.note);case _:
   return orElse();
 
 }
@@ -180,10 +184,10 @@ return $default(_that.patientId,_that.name,_that.phone,_that.note);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String patientId,  String name,  String phone,  String note)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String patientId,  String name,  String phone,  String email,  String telegram,  bool whatsappAvailable,  Set<PatientContactChannel> preferredContactChannels,  String note)  $default,) {final _that = this;
 switch (_that) {
 case _UpdatePatientInput():
-return $default(_that.patientId,_that.name,_that.phone,_that.note);case _:
+return $default(_that.patientId,_that.name,_that.phone,_that.email,_that.telegram,_that.whatsappAvailable,_that.preferredContactChannels,_that.note);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +204,10 @@ return $default(_that.patientId,_that.name,_that.phone,_that.note);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String patientId,  String name,  String phone,  String note)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String patientId,  String name,  String phone,  String email,  String telegram,  bool whatsappAvailable,  Set<PatientContactChannel> preferredContactChannels,  String note)?  $default,) {final _that = this;
 switch (_that) {
 case _UpdatePatientInput() when $default != null:
-return $default(_that.patientId,_that.name,_that.phone,_that.note);case _:
+return $default(_that.patientId,_that.name,_that.phone,_that.email,_that.telegram,_that.whatsappAvailable,_that.preferredContactChannels,_that.note);case _:
   return null;
 
 }
@@ -215,12 +219,22 @@ return $default(_that.patientId,_that.name,_that.phone,_that.note);case _:
 
 
 class _UpdatePatientInput extends UpdatePatientInput {
-  const _UpdatePatientInput({required this.patientId, required this.name, required this.phone, this.note = ''}): super._();
+  const _UpdatePatientInput({required this.patientId, required this.name, required this.phone, this.email = '', this.telegram = '', this.whatsappAvailable = false,  Set<PatientContactChannel> preferredContactChannels = const <PatientContactChannel>{}, this.note = ''}): _preferredContactChannels = preferredContactChannels,super._();
   
 
 @override final  String patientId;
 @override final  String name;
 @override final  String phone;
+@override@JsonKey() final  String email;
+@override@JsonKey() final  String telegram;
+@override@JsonKey() final  bool whatsappAvailable;
+ final  Set<PatientContactChannel> _preferredContactChannels;
+@override@JsonKey() Set<PatientContactChannel> get preferredContactChannels {
+  if (_preferredContactChannels is EqualUnmodifiableSetView) return _preferredContactChannels;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableSetView(_preferredContactChannels);
+}
+
 @override@JsonKey() final  String note;
 
 /// Create a copy of UpdatePatientInput
@@ -233,18 +247,18 @@ _$UpdatePatientInputCopyWith<_UpdatePatientInput> get copyWith => __$UpdatePatie
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _UpdatePatientInput&&(identical(other.patientId, patientId) || other.patientId == patientId)&&(identical(other.name, name) || other.name == name)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.note, note) || other.note == note));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _UpdatePatientInput&&(identical(other.patientId, patientId) || other.patientId == patientId)&&(identical(other.name, name) || other.name == name)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.email, email) || other.email == email)&&(identical(other.telegram, telegram) || other.telegram == telegram)&&(identical(other.whatsappAvailable, whatsappAvailable) || other.whatsappAvailable == whatsappAvailable)&&const DeepCollectionEquality().equals(other.preferredContactChannels, _preferredContactChannels)&&(identical(other.note, note) || other.note == note));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,patientId,name,phone,note);
+    return Object.hash(runtimeType,patientId,name,phone,email,telegram,whatsappAvailable,const DeepCollectionEquality().hash(_preferredContactChannels),note);
 }
 
 @override
 String toString() {
-    return 'UpdatePatientInput(patientId: $patientId, name: $name, phone: $phone, note: $note)';
+    return 'UpdatePatientInput(patientId: $patientId, name: $name, phone: $phone, email: $email, telegram: $telegram, whatsappAvailable: $whatsappAvailable, preferredContactChannels: $preferredContactChannels, note: $note)';
 }
 
 
@@ -255,7 +269,7 @@ abstract mixin class _$UpdatePatientInputCopyWith<$Res> implements $UpdatePatien
   factory _$UpdatePatientInputCopyWith(_UpdatePatientInput value, $Res Function(_UpdatePatientInput) _then) = __$UpdatePatientInputCopyWithImpl;
 @override @useResult
 $Res call({
- String patientId, String name, String phone, String note
+ String patientId, String name, String phone, String email, String telegram, bool whatsappAvailable, Set<PatientContactChannel> preferredContactChannels, String note
 });
 
 
@@ -272,12 +286,16 @@ class __$UpdatePatientInputCopyWithImpl<$Res>
 
 /// Create a copy of UpdatePatientInput
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? patientId = null,Object? name = null,Object? phone = null,Object? note = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? patientId = null,Object? name = null,Object? phone = null,Object? email = null,Object? telegram = null,Object? whatsappAvailable = null,Object? preferredContactChannels = null,Object? note = null,}) {
   return _then(_UpdatePatientInput(
 patientId: null == patientId ? _self.patientId : patientId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,phone: null == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
-as String,note: null == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
+as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,telegram: null == telegram ? _self.telegram : telegram // ignore: cast_nullable_to_non_nullable
+as String,whatsappAvailable: null == whatsappAvailable ? _self.whatsappAvailable : whatsappAvailable // ignore: cast_nullable_to_non_nullable
+as bool,preferredContactChannels: null == preferredContactChannels ? _self._preferredContactChannels : preferredContactChannels // ignore: cast_nullable_to_non_nullable
+as Set<PatientContactChannel>,note: null == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

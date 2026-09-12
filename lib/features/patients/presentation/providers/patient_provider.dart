@@ -26,3 +26,12 @@ final patientsProvider = FutureProvider<List<Patient>>((ref) {
 
   return repository.fetchPatients();
 });
+
+final patientByIdProvider = FutureProvider.family<Patient?, String>((
+  ref,
+  patientId,
+) {
+  final repository = ref.watch(patientManagementRepositoryProvider);
+
+  return repository.fetchPatientById(patientId: patientId);
+});

@@ -15,6 +15,7 @@ import '../../features/onboarding/presentation/pages/clinic_setup_page.dart';
 import '../../features/onboarding/presentation/pages/doctor_setup_page.dart';
 import '../../features/onboarding/presentation/pages/region_page.dart';
 import '../../features/onboarding/presentation/pages/welcome_page.dart';
+import '../../features/patients/presentation/patient_workspace_page.dart';
 import '../../features/patients/presentation/patients_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../shell/app_shell.dart';
@@ -120,6 +121,14 @@ final appRouter = GoRouter(
           path: '/patients',
           builder: (context, state) {
             return const PatientsPage();
+          },
+        ),
+        GoRoute(
+          path: '/patients/:patientId',
+          builder: (context, state) {
+            final patientId = state.pathParameters['patientId']!;
+
+            return PatientWorkspacePage(patientId: patientId);
           },
         ),
         GoRoute(
