@@ -598,7 +598,10 @@ class _DesktopPatientsList extends StatelessWidget {
               },
             ),
             if (index < patients.length - 1)
-              Divider(height: 1, color: colorScheme.outlineVariant),
+              Divider(
+                height: 1,
+                color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+              ),
           ],
         ],
       ),
@@ -790,7 +793,7 @@ class _MobilePatientsList extends StatelessWidget {
                 height: 1,
                 indent: AppSpacing.lg,
                 endIndent: AppSpacing.lg,
-                color: colorScheme.outlineVariant,
+                color: colorScheme.outlineVariant.withValues(alpha: 0.45),
               ),
           ],
         ],
