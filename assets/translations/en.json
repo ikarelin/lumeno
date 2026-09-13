@@ -136,7 +136,13 @@
     "archiveFailed": "We couldn't archive the patient. Please try again.",
     "created": "Patient added.",
     "updated": "Patient details updated.",
-    "archived": "Patient moved to archive."
+    "archived": "Patient moved to archive.",
+    "glance": {
+      "title": "At a glance",
+      "total": "Total patients",
+      "withPhone": "With phone number",
+      "visible": "Currently visible"
+    }
   },
   "calendar": {
     "title": "Calendar",

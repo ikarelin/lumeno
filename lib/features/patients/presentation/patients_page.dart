@@ -9,6 +9,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/at_a_glance_card.dart';
 import '../../quick_create/domain/quick_create_context.dart';
 import '../../quick_create/domain/quick_create_intent.dart';
 import '../../quick_create/domain/quick_create_source.dart';
@@ -443,7 +444,7 @@ class _PatientsContent extends StatelessWidget {
                 patient.phone.toLowerCase().contains(normalizedQuery);
           }).toList();
 
-    return Column(
+    final mainContent = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ConstrainedBox(
@@ -479,6 +480,43 @@ class _PatientsContent extends StatelessWidget {
             onNewVisit: onNewVisit,
             onArchivePatient: onArchivePatient,
           ),
+      ],
+    );
+
+    if (!isDesktop) return mainContent;
+
+    final withPhoneCount = patients
+        .where((patient) => patient.phone.trim().isNotEmpty)
+        .length;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 7, child: mainContent),
+        const SizedBox(width: AppSpacing.lg),
+        Expanded(
+          flex: 3,
+          child: AtAGlanceCard(
+            title: 'patients.glance.title',
+            metrics: [
+              AtAGlanceMetric(
+                icon: Icons.groups_outlined,
+                value: '${patients.length}',
+                label: 'patients.glance.total',
+              ),
+              AtAGlanceMetric(
+                icon: Icons.phone_outlined,
+                value: '$withPhoneCount',
+                label: 'patients.glance.withPhone',
+              ),
+              AtAGlanceMetric(
+                icon: Icons.visibility_outlined,
+                value: '${filteredPatients.length}',
+                label: 'patients.glance.visible',
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

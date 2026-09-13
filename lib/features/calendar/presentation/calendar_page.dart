@@ -8,6 +8,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/at_a_glance_card.dart';
 import '../../quick_create/domain/quick_create_context.dart';
 import '../../quick_create/domain/quick_create_intent.dart';
 import '../../quick_create/domain/quick_create_source.dart';
@@ -575,19 +576,20 @@ class _WeekView extends StatelessWidget {
         const SizedBox(width: AppSpacing.lg),
         const Expanded(
           flex: 3,
-          child: _CalendarAtAGlance(
+          child: AtAGlanceCard(
+            title: 'calendar.legend.title',
             metrics: [
-              _GlanceMetric(
+              AtAGlanceMetric(
                 icon: Icons.event_available_outlined,
                 value: '18',
                 label: 'calendar.glance.weekVisits',
               ),
-              _GlanceMetric(
+              AtAGlanceMetric(
                 icon: Icons.schedule_outlined,
                 value: '12',
                 label: 'calendar.glance.weekFreeWindows',
               ),
-              _GlanceMetric(
+              AtAGlanceMetric(
                 icon: Icons.today_outlined,
                 value: '5',
                 label: 'calendar.glance.weekWorkingDays',
@@ -911,19 +913,20 @@ class _MonthView extends StatelessWidget {
         const SizedBox(width: AppSpacing.lg),
         const Expanded(
           flex: 3,
-          child: _CalendarAtAGlance(
+          child: AtAGlanceCard(
+            title: 'calendar.legend.title',
             metrics: [
-              _GlanceMetric(
+              AtAGlanceMetric(
                 icon: Icons.event_available_outlined,
                 value: '74',
                 label: 'calendar.glance.monthVisits',
               ),
-              _GlanceMetric(
+              AtAGlanceMetric(
                 icon: Icons.trending_up_rounded,
                 value: '82%',
                 label: 'calendar.glance.monthLoad',
               ),
-              _GlanceMetric(
+              AtAGlanceMetric(
                 icon: Icons.calendar_today_outlined,
                 value: '4',
                 label: 'calendar.glance.monthBusyDays',
@@ -941,70 +944,6 @@ class _MonthView extends StatelessWidget {
         .subtract(Duration(days: firstDay.weekday - 1))
         .add(Duration(days: weekday));
   }
-}
-
-class _CalendarAtAGlance extends StatelessWidget {
-  const _CalendarAtAGlance({required this.metrics});
-
-  final List<_GlanceMetric> metrics;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('calendar.legend.title'.tr(), style: AppTextStyles.titleLarge),
-          const SizedBox(height: AppSpacing.md),
-          for (final metric in metrics) ...[
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.brand.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(metric.icon, size: 19, color: AppColors.brand),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    metric.label.tr(),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                Text(
-                  metric.value,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            if (metric != metrics.last) const SizedBox(height: AppSpacing.md),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _GlanceMetric {
-  const _GlanceMetric({
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
 }
 
 enum _ScheduleKind { free, visit, breakTime }
