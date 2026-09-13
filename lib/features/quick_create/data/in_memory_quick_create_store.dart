@@ -3,6 +3,7 @@ import '../domain/clinic.dart';
 import '../domain/patient.dart';
 import '../domain/quick_create_inputs.dart';
 import '../domain/quick_create_repositories.dart';
+import '../../visits/domain/update_visit_input.dart';
 import '../domain/visit.dart';
 
 class InMemoryQuickCreateStore
@@ -10,6 +11,8 @@ class InMemoryQuickCreateStore
         PatientRepository,
         ClinicRepository,
         VisitRepository,
+        VisitQueryRepository,
+        VisitManagementRepository,
         AvailabilityRepository {
   InMemoryQuickCreateStore({
     List<Patient> patients = const [],
@@ -123,6 +126,65 @@ class InMemoryQuickCreateStore
   }
 
   @override
+  Future<List<Visit>> fetchVisits({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    return List.unmodifiable(
+      _visits.where(
+        (visit) => visit.startsAt.isBefore(to) && visit.endsAt.isAfter(from),
+      ),
+    );
+  }
+
+  @override
+  Future<Visit> updateVisit(UpdateVisitInput input) async {
+    if (!input.isValid) {
+      throw ArgumentError('Visit data is invalid');
+    }
+
+    final index = _visits.indexWhere((visit) => visit.id == input.visitId);
+
+    if (index < 0) {
+      throw StateError('Visit does not exist');
+    }
+
+    final current = _visits[index];
+    final updated = current.copyWith(
+      patientId: input.patientId,
+      clinicId: input.clinicId,
+      startsAt: input.startsAt,
+      durationMinutes: input.durationMinutes,
+      note: input.note.trim(),
+    );
+
+    _visits[index] = updated;
+    return updated;
+  }
+
+  @override
+  Future<void> cancelVisit({required String visitId}) async {
+    final index = _visits.indexWhere((visit) => visit.id == visitId);
+
+    if (index < 0) {
+      throw StateError('Visit does not exist');
+    }
+
+    _visits[index] = _visits[index].copyWith(status: VisitStatus.cancelled);
+  }
+
+  @override
+  Future<void> deleteVisit({required String visitId}) async {
+    final removed = _visits.where((visit) => visit.id == visitId).toList();
+
+    if (removed.isEmpty) {
+      throw StateError('Visit does not exist');
+    }
+
+    _visits.removeWhere((visit) => visit.id == visitId);
+  }
+
+  @override
   Future<List<AvailabilitySlot>> findAvailableSlots({
     required DateTime from,
     required int durationMinutes,
@@ -139,7 +201,8 @@ class InMemoryQuickCreateStore
 
       final overlaps = _visits.any((visit) {
         return slot.startsAt.isBefore(visit.endsAt) &&
-            slot.endsAt.isAfter(visit.startsAt);
+            slot.endsAt.isAfter(visit.startsAt) &&
+            visit.occupiesAvailability;
       });
 
       if (!overlaps) {

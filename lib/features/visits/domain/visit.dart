@@ -12,8 +12,17 @@ abstract class Visit with _$Visit {
     required String clinicId,
     required DateTime startsAt,
     required int durationMinutes,
+    @Default(VisitStatus.scheduled) VisitStatus status,
     @Default('') String note,
   }) = _Visit;
 
   DateTime get endsAt => startsAt.add(Duration(minutes: durationMinutes));
+
+  bool get occupiesAvailability => status == VisitStatus.scheduled;
+}
+
+enum VisitStatus {
+  scheduled,
+  cancelled,
+  completed,
 }

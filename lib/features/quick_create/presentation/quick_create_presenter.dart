@@ -42,7 +42,7 @@ abstract final class QuickCreatePresenter {
       patientRepository: patientRepository,
       clinicRepository: clinicRepository,
       clinicMembershipRepository: clinicMembershipRepository,
-      visitRepository: store,
+      visitRepository: container.read(quickCreateVisitRepositoryProvider),
       availabilityRepository: store,
     );
 

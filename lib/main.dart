@@ -7,6 +7,7 @@ import 'app/app.dart';
 import 'core/network/supabase_config.dart';
 import 'features/patients/presentation/providers/patient_provider.dart';
 import 'features/quick_create/presentation/providers/quick_create_providers.dart';
+import 'features/visits/presentation/providers/visit_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,9 @@ Future<void> main() async {
         overrides: [
           quickCreatePatientRepositoryProvider.overrideWith((ref) {
             return ref.watch(patientRepositoryProvider);
+          }),
+          quickCreateVisitRepositoryProvider.overrideWith((ref) {
+            return ref.watch(visitRepositoryProvider);
           }),
         ],
         child: const LumenoApp(),
