@@ -16,9 +16,7 @@ create table public.visits (
   starts_at timestamptz not null,
   duration_minutes integer not null
     check (duration_minutes > 0),
-  ends_at timestamptz generated always as (
-    starts_at + make_interval(mins => duration_minutes)
-  ) stored,
+  ends_at timestamptz not null,
   status text not null default 'scheduled'
     check (status in ('scheduled', 'cancelled', 'completed')),
   note text not null default '',
@@ -40,6 +38,22 @@ create index visits_patient_starts_at_idx
 
 create index visits_clinic_starts_at_idx
   on public.visits(clinic_id, starts_at);
+
+create or replace function public.set_visit_ends_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.ends_at := new.starts_at + (new.duration_minutes * interval '1 minute');
+  return new;
+end;
+$$;
+
+create trigger visits_set_ends_at
+  before insert or update of starts_at, duration_minutes on public.visits
+  for each row
+  execute function public.set_visit_ends_at();
 
 create trigger visits_set_updated_at
   before update on public.visits
