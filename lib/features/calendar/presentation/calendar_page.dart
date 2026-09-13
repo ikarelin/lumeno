@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_breakpoints.dart';
 import '../../../app/theme/app_colors.dart';
@@ -13,17 +14,19 @@ import '../../quick_create/domain/quick_create_context.dart';
 import '../../quick_create/domain/quick_create_intent.dart';
 import '../../quick_create/domain/quick_create_source.dart';
 import '../../quick_create/presentation/quick_create_presenter.dart';
+import '../../visits/domain/visit.dart';
+import 'controllers/calendar_day_controller.dart';
 
 enum _CalendarView { day, week, month }
 
-class CalendarPage extends StatefulWidget {
+class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
 
   @override
-  State<CalendarPage> createState() => _CalendarPageState();
+  ConsumerState<CalendarPage> createState() => _CalendarPageState();
 }
 
-class _CalendarPageState extends State<CalendarPage> {
+class _CalendarPageState extends ConsumerState<CalendarPage> {
   DateTime _selectedDate = DateTime.now();
   _CalendarView _view = _CalendarView.day;
 
@@ -54,7 +57,11 @@ class _CalendarPageState extends State<CalendarPage> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   if (_view == _CalendarView.day)
-                    _DayView(isDesktop: isDesktop, onAddVisit: _openNewVisit)
+                    _DayView(
+                      selectedDate: _selectedDate,
+                      isDesktop: isDesktop,
+                      onAddVisit: _openNewVisit,
+                    )
                   else if (_view == _CalendarView.week)
                     _WeekView(
                       isDesktop: isDesktop,
@@ -111,6 +118,7 @@ class _CalendarPageState extends State<CalendarPage> {
         durationMinutes: 30,
       ),
     );
+    ref.invalidate(calendarDayVisitsProvider(_selectedDate));
   }
 }
 
@@ -241,55 +249,85 @@ class _CalendarHeader extends StatelessWidget {
   }
 }
 
-class _DayView extends StatelessWidget {
-  const _DayView({required this.isDesktop, required this.onAddVisit});
+class _DayView extends ConsumerWidget {
+  const _DayView({
+    required this.selectedDate,
+    required this.isDesktop,
+    required this.onAddVisit,
+  });
 
+  final DateTime selectedDate;
   final bool isDesktop;
   final VoidCallback onAddVisit;
 
   @override
-  Widget build(BuildContext context) {
-    final schedule = [
-      _ScheduleItem.free('09:00', '10:30', 'calendar.freeWindow'),
-      _ScheduleItem.visit(
-        '10:30',
-        '11:30',
-        'Anna Brown',
-        'calendar.appointmentTypes.consultation',
-        AppColors.brand,
-      ),
-      _ScheduleItem.free('11:30', '13:00', 'calendar.freeWindow'),
-      _ScheduleItem.breakTime('13:00', '14:00'),
-      _ScheduleItem.visit(
-        '14:00',
-        '15:30',
-        'Michael Wilson',
-        'calendar.appointmentTypes.treatment',
-        const Color(0xFF6D78C8),
-      ),
-      _ScheduleItem.free('15:30', '18:00', 'calendar.freeWindow'),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final visits = ref.watch(calendarDayVisitsProvider(selectedDate));
+    final locale = context.locale.toLanguageTag();
+    final scheduledVisits = visits is AsyncData<List<Visit>>
+        ? visits.value
+              .where((visit) => visit.status == VisitStatus.scheduled)
+              .toList(growable: false)
+        : const <Visit>[];
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _CalendarSummary(onAddVisit: onAddVisit, visitCount: 3),
+        _CalendarSummary(
+          onAddVisit: onAddVisit,
+          visitCount: scheduledVisits.length,
+        ),
         const SizedBox(height: AppSpacing.md),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: schedule
-                .asMap()
-                .entries
+        visits.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => AppCard(
+            child: Text(
+              'calendar.loadError'.tr(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+          data: (items) {
+            if (items.isEmpty) {
+              return AppCard(
+                child: Text(
+                  'calendar.noVisits'.tr(),
+                  style: AppTextStyles.bodyLarge,
+                ),
+              );
+            }
+
+            final schedule = items
+                .where((visit) => visit.status == VisitStatus.scheduled)
                 .map(
-                  (entry) => _ScheduleRow(
-                    item: entry.value,
-                    isDesktop: isDesktop,
-                    showDivider: entry.key < schedule.length - 1,
+                  (visit) => _ScheduleItem.visit(
+                    DateFormat('HH:mm', locale).format(visit.startsAt),
+                    DateFormat('HH:mm', locale).format(visit.endsAt),
+                    '${'calendar.patient'.tr()} ${visit.patientName ?? visit.patientId}',
+                    'calendar.appointmentTypes.consultation',
+                    AppColors.brand,
                   ),
                 )
-                .toList(),
-          ),
+                .toList(growable: false);
+
+            return AppCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: schedule
+                    .asMap()
+                    .entries
+                    .map(
+                      (entry) => _ScheduleRow(
+                        item: entry.value,
+                        isDesktop: isDesktop,
+                        showDivider: entry.key < schedule.length - 1,
+                      ),
+                    )
+                    .toList(),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -958,14 +996,6 @@ class _ScheduleItem {
     this.color,
   });
 
-  factory _ScheduleItem.free(String start, String end, String label) =>
-      _ScheduleItem(
-        kind: _ScheduleKind.free,
-        start: start,
-        end: end,
-        label: label,
-      );
-
   factory _ScheduleItem.visit(
     String start,
     String end,
@@ -979,13 +1009,6 @@ class _ScheduleItem {
     label: label,
     subtitle: subtitle,
     color: color,
-  );
-
-  factory _ScheduleItem.breakTime(String start, String end) => _ScheduleItem(
-    kind: _ScheduleKind.breakTime,
-    start: start,
-    end: end,
-    label: 'calendar.break',
   );
 
   final _ScheduleKind kind;

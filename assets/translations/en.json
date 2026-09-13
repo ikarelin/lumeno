@@ -154,6 +154,9 @@
     "freeWindow": "Available",
     "break": "Break",
     "visitSummary": "Visits ({0})",
+    "noVisits": "No visits scheduled for this day",
+    "loadError": "Unable to load visits",
+    "patient": "Patient",
     "views": {
       "day": "Day",
       "week": "Week",

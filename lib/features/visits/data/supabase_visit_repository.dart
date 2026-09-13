@@ -6,11 +6,15 @@ import '../domain/visit.dart';
 import '../domain/visit_repository.dart';
 
 class SupabaseVisitRepository
-    implements VisitRepository, VisitQueryRepository, VisitManagementRepository {
+    implements
+        VisitRepository,
+        VisitQueryRepository,
+        VisitManagementRepository {
   SupabaseVisitRepository(this._client);
 
   static const _visitColumns =
-      'id, patient_id, clinic_id, starts_at, duration_minutes, status, note';
+      'id, patient_id, clinic_id, starts_at, duration_minutes, status, note, '
+      'patient:patients!inner(name)';
 
   final SupabaseClient _client;
 
@@ -136,6 +140,8 @@ class SupabaseVisitRepository
       clinicId: row['clinic_id'] as String,
       startsAt: DateTime.parse(row['starts_at'] as String).toLocal(),
       durationMinutes: row['duration_minutes'] as int,
+      patientName:
+          (row['patient'] as Map<String, dynamic>?)?['name'] as String?,
       status: VisitStatus.values.byName(row['status'] as String),
       note: row['note'] as String? ?? '',
     );

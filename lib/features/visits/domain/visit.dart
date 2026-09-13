@@ -12,6 +12,7 @@ abstract class Visit with _$Visit {
     required String clinicId,
     required DateTime startsAt,
     required int durationMinutes,
+    String? patientName,
     @Default(VisitStatus.scheduled) VisitStatus status,
     @Default('') String note,
   }) = _Visit;
