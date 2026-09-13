@@ -611,33 +611,40 @@ class _DesktopPatientsHeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.labelMedium?.copyWith(
-      color: Theme.of(context).colorScheme.onSurfaceVariant,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.5,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 4,
-            child: Text('patients.name'.tr().toUpperCase(), style: style),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text('patients.phone'.tr().toUpperCase(), style: style),
-          ),
-          Expanded(
-            flex: 4,
-            child: Text('patients.note'.tr().toUpperCase(), style: style),
-          ),
-          const SizedBox(width: 96),
-        ],
+    return SizedBox(
+      height: 68,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              flex: 4,
+              child: Text(
+                'patients.name'.tr(),
+                style: AppTextStyles.titleLarge,
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Text(
+                'patients.phone'.tr(),
+                style: AppTextStyles.titleLarge,
+              ),
+            ),
+            Expanded(
+              flex: 4,
+              child: Text(
+                'patients.note'.tr(),
+                style: AppTextStyles.titleLarge,
+              ),
+            ),
+            const SizedBox(width: 96),
+          ],
+        ),
       ),
     );
   }
