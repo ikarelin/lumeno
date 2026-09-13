@@ -9,7 +9,6 @@
     "viewAll": "View all",
     "nextVisit": "Next visit",
     "nextAvailableSlot": "Next available slot",
-    "upcomingVisits": "Upcoming visits",
     "bookPatient": "Schedule visit",
     "openVisit": "Open visit",
     "available": "Available",
@@ -140,7 +139,41 @@
     "archived": "Patient moved to archive."
   },
   "calendar": {
-    "title": "Calendar"
+    "title": "Calendar",
+    "today": "Today",
+    "previous": "Previous period",
+    "next": "Next period",
+    "newVisit": "New visit",
+    "blockTime": "Block time",
+    "freeWindow": "Available",
+    "break": "Break",
+    "visitSummary": "Visits ({0})",
+    "views": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    },
+    "appointmentTypes": {
+      "consultation": "Consultation",
+      "treatment": "Treatment session"
+    },
+    "legend": {
+      "title": "At a glance",
+      "visits": "Visits",
+      "free": "Available time",
+      "breaks": "Breaks",
+      "hint": "Tap an available interval to start scheduling. The selected date and time will be ready for you."
+    },
+    "glance": {
+      "weekVisits": "Visits this week",
+      "weekFreeWindows": "Available windows",
+      "weekWorkingDays": "Working days",
+      "monthVisits": "Visits this month",
+      "monthLoad": "Schedule load",
+      "monthBusyDays": "Busy days"
+    },
+    "weekend": "Day off",
+    "weekSummary": "{0} visits · {1} free windows"
   },
   "files": {
     "title": "Files"
