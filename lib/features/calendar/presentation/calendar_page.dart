@@ -14,8 +14,9 @@ import '../../quick_create/domain/quick_create_context.dart';
 import '../../quick_create/domain/quick_create_intent.dart';
 import '../../quick_create/domain/quick_create_source.dart';
 import '../../quick_create/presentation/quick_create_presenter.dart';
-import '../../visits/domain/visit.dart';
 import 'controllers/calendar_day_controller.dart';
+import 'views/calendar_day_view.dart';
+import 'widgets/calendar_summary.dart';
 
 enum _CalendarView { day, week, month }
 
@@ -57,7 +58,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   if (_view == _CalendarView.day)
-                    _DayView(
+                    CalendarDayView(
                       selectedDate: _selectedDate,
                       isDesktop: isDesktop,
                       onAddVisit: _openNewVisit,
@@ -249,303 +250,6 @@ class _CalendarHeader extends StatelessWidget {
   }
 }
 
-class _DayView extends ConsumerWidget {
-  const _DayView({
-    required this.selectedDate,
-    required this.isDesktop,
-    required this.onAddVisit,
-  });
-
-  final DateTime selectedDate;
-  final bool isDesktop;
-  final VoidCallback onAddVisit;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final visits = ref.watch(calendarDayVisitsProvider(selectedDate));
-    final locale = context.locale.toLanguageTag();
-    final scheduledVisits = visits is AsyncData<List<Visit>>
-        ? visits.value
-              .where((visit) => visit.status == VisitStatus.scheduled)
-              .toList(growable: false)
-        : const <Visit>[];
-
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _CalendarSummary(
-          onAddVisit: onAddVisit,
-          visitCount: scheduledVisits.length,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        visits.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => AppCard(
-            child: Text(
-              'calendar.loadError'.tr(),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-          ),
-          data: (items) {
-            if (items.isEmpty) {
-              return AppCard(
-                child: Text(
-                  'calendar.noVisits'.tr(),
-                  style: AppTextStyles.bodyLarge,
-                ),
-              );
-            }
-
-            final schedule = items
-                .where((visit) => visit.status == VisitStatus.scheduled)
-                .map(
-                  (visit) => _ScheduleItem.visit(
-                    DateFormat('HH:mm', locale).format(visit.startsAt),
-                    DateFormat('HH:mm', locale).format(visit.endsAt),
-                    '${'calendar.patient'.tr()} ${visit.patientName ?? visit.patientId}',
-                    'calendar.appointmentTypes.consultation',
-                    AppColors.brand,
-                  ),
-                )
-                .toList(growable: false);
-
-            return AppCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: schedule
-                    .asMap()
-                    .entries
-                    .map(
-                      (entry) => _ScheduleRow(
-                        item: entry.value,
-                        isDesktop: isDesktop,
-                        showDivider: entry.key < schedule.length - 1,
-                      ),
-                    )
-                    .toList(),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-
-    if (!isDesktop) return content;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 7, child: content),
-        const SizedBox(width: AppSpacing.lg),
-        const Expanded(flex: 3, child: _DayLegend()),
-      ],
-    );
-  }
-}
-
-class _CalendarSummary extends StatelessWidget {
-  const _CalendarSummary({required this.onAddVisit, required this.visitCount});
-
-  final VoidCallback onAddVisit;
-  final int visitCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            'calendar.visitSummary'.tr(args: ['$visitCount']),
-            style: AppTextStyles.titleLarge,
-          ),
-        ),
-        TextButton(
-          onPressed: onAddVisit,
-          child: Text('calendar.blockTime'.tr()),
-        ),
-      ],
-    );
-  }
-}
-
-class _ScheduleRow extends StatelessWidget {
-  const _ScheduleRow({
-    required this.item,
-    required this.isDesktop,
-    required this.showDivider,
-  });
-
-  final _ScheduleItem item;
-  final bool isDesktop;
-  final bool showDivider;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isFree = item.kind == _ScheduleKind.free;
-    final isBreak = item.kind == _ScheduleKind.breakTime;
-    final accentColor = isFree
-        ? colorScheme.outlineVariant
-        : isBreak
-        ? colorScheme.outline
-        : item.color!;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      decoration: BoxDecoration(
-        color: isBreak
-            ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.38)
-            : null,
-        border: Border(
-          bottom: showDivider
-              ? BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.45),
-                )
-              : BorderSide.none,
-        ),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: isDesktop ? 88 : 72,
-            child: Text(
-              '${item.start} - ${item.end}',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: isBreak
-                    ? colorScheme.onSurfaceVariant
-                    : colorScheme.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              isFree
-                  ? Icons.add_circle_outline_rounded
-                  : isBreak
-                  ? Icons.pause_circle_outline_rounded
-                  : Icons.person_outline_rounded,
-              size: 19,
-              color: accentColor,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isBreak
-                      ? 'calendar.break'.tr()
-                      : isFree
-                      ? item.label.tr()
-                      : item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (item.subtitle != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    item.subtitle!.tr(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (isFree)
-            Icon(
-              Icons.chevron_right_rounded,
-              color: colorScheme.onSurfaceVariant,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DayLegend extends StatelessWidget {
-  const _DayLegend();
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('calendar.legend.title'.tr(), style: AppTextStyles.titleLarge),
-          const SizedBox(height: AppSpacing.md),
-          const _LegendItem(
-            color: AppColors.brand,
-            label: 'calendar.legend.visits',
-          ),
-          _LegendItem(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            label: 'calendar.legend.free',
-          ),
-          _LegendItem(
-            color: Theme.of(context).colorScheme.outline,
-            label: 'calendar.legend.breaks',
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'calendar.legend.hint'.tr(),
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  const _LegendItem({required this.color, required this.label});
-
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Row(
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(label.tr(), style: AppTextStyles.bodyMedium),
-        ],
-      ),
-    );
-  }
-}
-
 class _WeekView extends StatelessWidget {
   const _WeekView({
     required this.isDesktop,
@@ -568,7 +272,7 @@ class _WeekView extends StatelessWidget {
 
     final content = Column(
       children: [
-        _CalendarSummary(onAddVisit: onAddVisit, visitCount: 18),
+        CalendarSummary(onAddVisit: onAddVisit, visitCount: 18),
         const SizedBox(height: AppSpacing.md),
         AppCard(
           padding: EdgeInsets.zero,
@@ -787,7 +491,7 @@ class _MonthView extends StatelessWidget {
 
     final content = Column(
       children: [
-        _CalendarSummary(onAddVisit: onAddVisit, visitCount: 74),
+        CalendarSummary(onAddVisit: onAddVisit, visitCount: 74),
         const SizedBox(height: AppSpacing.md),
         AppCard(
           padding: EdgeInsets.zero,
@@ -982,39 +686,4 @@ class _MonthView extends StatelessWidget {
         .subtract(Duration(days: firstDay.weekday - 1))
         .add(Duration(days: weekday));
   }
-}
-
-enum _ScheduleKind { free, visit, breakTime }
-
-class _ScheduleItem {
-  const _ScheduleItem({
-    required this.kind,
-    required this.start,
-    required this.end,
-    required this.label,
-    this.subtitle,
-    this.color,
-  });
-
-  factory _ScheduleItem.visit(
-    String start,
-    String end,
-    String label,
-    String subtitle,
-    Color color,
-  ) => _ScheduleItem(
-    kind: _ScheduleKind.visit,
-    start: start,
-    end: end,
-    label: label,
-    subtitle: subtitle,
-    color: color,
-  );
-
-  final _ScheduleKind kind;
-  final String start;
-  final String end;
-  final String label;
-  final String? subtitle;
-  final Color? color;
 }
