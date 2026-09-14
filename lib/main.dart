@@ -7,6 +7,7 @@ import 'app/app.dart';
 import 'core/network/supabase_config.dart';
 import 'features/patients/presentation/providers/patient_provider.dart';
 import 'features/quick_create/presentation/providers/quick_create_providers.dart';
+import 'features/scheduling/presentation/providers/availability_provider.dart';
 import 'features/visits/presentation/providers/visit_provider.dart';
 
 Future<void> main() async {
@@ -33,6 +34,9 @@ Future<void> main() async {
           }),
           quickCreateVisitRepositoryProvider.overrideWith((ref) {
             return ref.watch(visitRepositoryProvider);
+          }),
+          quickCreateAvailabilityRepositoryProvider.overrideWith((ref) {
+            return ref.watch(availabilityRepositoryProvider);
           }),
         ],
         child: const LumenoApp(),

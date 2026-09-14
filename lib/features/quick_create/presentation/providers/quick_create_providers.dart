@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../patients/domain/patient_repository.dart';
+import '../../../scheduling/domain/availability_repository.dart';
 import '../../../visits/domain/visit_repository.dart';
 import '../../data/in_memory_quick_create_store.dart';
 
@@ -15,3 +16,8 @@ final quickCreatePatientRepositoryProvider = Provider<PatientRepository>((ref) {
 final quickCreateVisitRepositoryProvider = Provider<VisitRepository>((ref) {
   return ref.watch(quickCreateStoreProvider);
 });
+
+final quickCreateAvailabilityRepositoryProvider =
+    Provider<AvailabilityRepository>((ref) {
+      return ref.watch(quickCreateStoreProvider);
+    });

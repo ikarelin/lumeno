@@ -25,8 +25,6 @@ abstract final class QuickCreatePresenter {
   ) async {
     final container = ProviderScope.containerOf(context, listen: false);
 
-    final store = container.read(quickCreateStoreProvider);
-
     final patientRepository = container.read(
       quickCreatePatientRepositoryProvider,
     );
@@ -43,7 +41,9 @@ abstract final class QuickCreatePresenter {
       clinicRepository: clinicRepository,
       clinicMembershipRepository: clinicMembershipRepository,
       visitRepository: container.read(quickCreateVisitRepositoryProvider),
-      availabilityRepository: store,
+      availabilityRepository: container.read(
+        quickCreateAvailabilityRepositoryProvider,
+      ),
     );
 
     var wasSavingPatient = false;
