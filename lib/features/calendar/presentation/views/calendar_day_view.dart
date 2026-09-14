@@ -9,6 +9,7 @@ import '../../../../shared/widgets/app_card.dart';
 import '../../../visits/domain/visit.dart';
 import '../controllers/calendar_day_controller.dart';
 import '../widgets/calendar_summary.dart';
+import '../widgets/calendar_visit_details_surface.dart';
 
 class CalendarDayView extends ConsumerWidget {
   const CalendarDayView({
@@ -51,7 +52,11 @@ class CalendarDayView extends ConsumerWidget {
             ),
           ),
           data: (items) {
-            if (items.isEmpty) {
+            final scheduledItems = items
+                .where((visit) => visit.status == VisitStatus.scheduled)
+                .toList(growable: false);
+
+            if (scheduledItems.isEmpty) {
               return AppCard(
                 child: Text(
                   'calendar.noVisits'.tr(),
@@ -60,10 +65,10 @@ class CalendarDayView extends ConsumerWidget {
               );
             }
 
-            final schedule = items
-                .where((visit) => visit.status == VisitStatus.scheduled)
+            final schedule = scheduledItems
                 .map(
                   (visit) => _ScheduleItem.visit(
+                    visit,
                     DateFormat('HH:mm', locale).format(visit.startsAt),
                     DateFormat('HH:mm', locale).format(visit.endsAt),
                     '${'calendar.patient'.tr()} ${visit.patientName ?? visit.patientId}',
@@ -84,6 +89,16 @@ class CalendarDayView extends ConsumerWidget {
                         item: entry.value,
                         isDesktop: isDesktop,
                         showDivider: entry.key < schedule.length - 1,
+                        onTap: entry.value.visit == null
+                            ? null
+                            : () {
+                                CalendarVisitDetailsSurface.show(
+                                  context: context,
+                                  visit: entry.value.visit!,
+                                  selectedDate: selectedDate,
+                                  isDesktop: isDesktop,
+                                );
+                              },
                       ),
                     )
                     .toList(),
@@ -112,11 +127,13 @@ class _ScheduleRow extends StatelessWidget {
     required this.item,
     required this.isDesktop,
     required this.showDivider,
+    this.onTap,
   });
 
   final _ScheduleItem item;
   final bool isDesktop;
   final bool showDivider;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +147,7 @@ class _ScheduleRow extends StatelessWidget {
         ? colorScheme.outline
         : item.color!;
 
-    return Container(
+    final row = Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.md,
@@ -211,13 +228,22 @@ class _ScheduleRow extends StatelessWidget {
               ],
             ),
           ),
-          if (isFree)
+          if (isFree || item.kind == _ScheduleKind.visit)
             Icon(
               Icons.chevron_right_rounded,
               color: colorScheme.onSurfaceVariant,
             ),
         ],
       ),
+    );
+
+    if (onTap == null) {
+      return row;
+    }
+
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(onTap: onTap, child: row),
     );
   }
 }
@@ -293,9 +319,11 @@ class _ScheduleItem {
     required this.label,
     this.subtitle,
     this.color,
+    this.visit,
   });
 
   factory _ScheduleItem.visit(
+    Visit visit,
     String start,
     String end,
     String label,
@@ -308,6 +336,7 @@ class _ScheduleItem {
     label: label,
     subtitle: subtitle,
     color: color,
+    visit: visit,
   );
 
   final _ScheduleKind kind;
@@ -316,4 +345,5 @@ class _ScheduleItem {
   final String label;
   final String? subtitle;
   final Color? color;
+  final Visit? visit;
 }
