@@ -7,6 +7,164 @@ import 'package:lumeno/features/visits/domain/visit_repository.dart';
 
 void main() {
   group('ProfileVisitAvailabilityRepository', () {
+    group('findDayAvailability', () {
+      test('returns continuous free intervals and the recurring break', () async {
+        final visits = _FakeVisitQueryRepository([
+          Visit(
+            id: 'visit-1',
+            patientId: 'patient-1',
+            clinicId: 'clinic-1',
+            startsAt: DateTime(2026, 9, 14, 10),
+            durationMinutes: 30,
+          ),
+          Visit(
+            id: 'visit-cancelled',
+            patientId: 'patient-2',
+            clinicId: 'clinic-1',
+            startsAt: DateTime(2026, 9, 14, 11),
+            durationMinutes: 30,
+            status: VisitStatus.cancelled,
+          ),
+        ]);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(
+              workingDays: const [DateTime.monday],
+              workdayStart: '09:00',
+              workdayEnd: '18:00',
+              breakStart: '13:00',
+              breakEnd: '14:00',
+            ),
+          ),
+          visitQueryRepository: visits,
+          now: () => DateTime(2026, 9, 14, 8),
+        );
+
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 9, 14),
+        );
+
+        expect(day.isWorkingDay, isTrue);
+        expect(day.breakIntervals, hasLength(1));
+        expect(
+          day.breakIntervals.single.startsAt,
+          DateTime(2026, 9, 14, 13),
+        );
+        expect(
+          day.breakIntervals.single.endsAt,
+          DateTime(2026, 9, 14, 14),
+        );
+        expect(day.availableIntervals, hasLength(3));
+        expect(
+          day.availableIntervals[0].startsAt,
+          DateTime(2026, 9, 14, 9),
+        );
+        expect(
+          day.availableIntervals[0].endsAt,
+          DateTime(2026, 9, 14, 10),
+        );
+        expect(
+          day.availableIntervals[1].startsAt,
+          DateTime(2026, 9, 14, 10, 30),
+        );
+        expect(
+          day.availableIntervals[1].endsAt,
+          DateTime(2026, 9, 14, 13),
+        );
+        expect(
+          day.availableIntervals[2].startsAt,
+          DateTime(2026, 9, 14, 14),
+        );
+        expect(
+          day.availableIntervals[2].endsAt,
+          DateTime(2026, 9, 14, 18),
+        );
+        expect(visits.lastFrom, DateTime(2026, 9, 14));
+        expect(visits.lastTo, DateTime(2026, 9, 15));
+      });
+
+      test('keeps short free fragments for Calendar rendering', () async {
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(
+              workingDays: const [DateTime.monday],
+              workdayStart: '09:00',
+              workdayEnd: '10:00',
+              breakStart: null,
+              breakEnd: null,
+            ),
+          ),
+          visitQueryRepository: _FakeVisitQueryRepository([
+            Visit(
+              id: 'visit-1',
+              patientId: 'patient-1',
+              clinicId: 'clinic-1',
+              startsAt: DateTime(2026, 9, 14, 9, 15),
+              durationMinutes: 30,
+            ),
+          ]),
+          now: () => DateTime(2026, 9, 14, 8),
+        );
+
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 9, 14),
+        );
+
+        expect(day.availableIntervals, hasLength(2));
+        expect(
+          day.availableIntervals[0].duration,
+          const Duration(minutes: 15),
+        );
+        expect(
+          day.availableIntervals[1].duration,
+          const Duration(minutes: 15),
+        );
+      });
+
+      test('returns a non-working day without querying Visits', () async {
+        final visits = _FakeVisitQueryRepository(const []);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(workingDays: const [DateTime.tuesday]),
+          ),
+          visitQueryRepository: visits,
+          now: () => DateTime(2026, 9, 14, 8),
+        );
+
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 9, 14),
+        );
+
+        expect(day.isWorkingDay, isFalse);
+        expect(day.availableIntervals, isEmpty);
+        expect(day.breakIntervals, isEmpty);
+        expect(visits.fetchCalls, 0);
+      });
+
+      test('does not expose past free time for today', () async {
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(
+              workingDays: const [DateTime.monday],
+              breakStart: null,
+              breakEnd: null,
+            ),
+          ),
+          visitQueryRepository: _FakeVisitQueryRepository(const []),
+          now: () => DateTime(2026, 9, 14, 10, 20),
+        );
+
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 9, 14),
+        );
+
+        expect(
+          day.availableIntervals.single.startsAt,
+          DateTime(2026, 9, 14, 10, 20),
+        );
+      });
+    });
+
     test('uses recurring work hours, break, and scheduled Visits', () async {
       final profileRepository = _FakeProfileRepository(
         _profile(

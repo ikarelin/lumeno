@@ -6,6 +6,41 @@ import 'package:lumeno/features/visits/domain/visit.dart';
 void main() {
   const engine = AvailabilityEngine();
 
+  group('AvailabilityEngine.findFreeIntervals', () {
+    test('returns continuous free windows without duration filtering', () {
+      final result = engine.findFreeIntervals(
+        workingIntervals: [_interval(9, 12)],
+        busyIntervals: [
+          AvailabilityInterval(
+            startsAt: DateTime(2026, 9, 14, 9, 15),
+            endsAt: DateTime(2026, 9, 14, 11, 45),
+          ),
+        ],
+        notBefore: DateTime(2026, 9, 14, 8),
+      );
+
+      expect(result, hasLength(2));
+      _expectInterval(result[0], startHour: 9, endHour: 9, endMinute: 15);
+      _expectInterval(
+        result[1],
+        startHour: 11,
+        startMinute: 45,
+        endHour: 12,
+      );
+    });
+
+    test('clips current-day free time at now', () {
+      final result = engine.findFreeIntervals(
+        workingIntervals: [_interval(9, 18)],
+        busyIntervals: const [],
+        notBefore: DateTime(2026, 9, 14, 10, 20),
+      );
+
+      expect(result.single.startsAt, DateTime(2026, 9, 14, 10, 20));
+      expect(result.single.endsAt, DateTime(2026, 9, 14, 18));
+    });
+  });
+
   group('AvailabilityEngine.findAvailableIntervals', () {
     test('returns a future working interval when nothing is busy', () {
       final result = engine.findAvailableIntervals(

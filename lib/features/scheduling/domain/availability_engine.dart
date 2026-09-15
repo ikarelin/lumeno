@@ -11,34 +11,28 @@ import 'availability_interval.dart';
 class AvailabilityEngine {
   const AvailabilityEngine();
 
-  /// Returns continuous free intervals that can fit the requested duration.
+  /// Returns every continuous free interval after subtracting busy time.
+  ///
+  /// This is the canonical interval-subtraction operation. It deliberately has
+  /// no appointment-duration filter so Calendar can render real free windows
+  /// rather than reconstructing availability in presentation code.
   ///
   /// [workingIntervals] defines when work is allowed. [busyIntervals] contains
   /// already unavailable time such as scheduled Visits and recurring breaks.
-  /// [notBefore] is normally the current instant for booking flows; it removes
-  /// past availability while preserving historical Visits elsewhere in the UI.
+  /// [notBefore] removes past availability while preserving historical Visits
+  /// elsewhere in the UI.
   ///
   /// The method performs no fixed 24-hour/day arithmetic. Concrete day and
   /// timezone boundaries must be resolved before calling the engine.
-  List<AvailabilityInterval> findAvailableIntervals({
+  List<AvailabilityInterval> findFreeIntervals({
     required List<AvailabilityInterval> workingIntervals,
     required List<AvailabilityInterval> busyIntervals,
-    required int requestedDurationMinutes,
     DateTime? notBefore,
   }) {
-    if (requestedDurationMinutes <= 0) {
-      throw ArgumentError.value(
-        requestedDurationMinutes,
-        'requestedDurationMinutes',
-        'Requested duration must be positive.',
-      );
-    }
-
     if (workingIntervals.isEmpty) {
       return const [];
     }
 
-    final requestedDuration = Duration(minutes: requestedDurationMinutes);
     final working = _mergeIntervals(workingIntervals);
     final busy = _mergeIntervals(busyIntervals);
     final result = <AvailabilityInterval>[];
@@ -57,10 +51,6 @@ class AvailabilityEngine {
         }
       }
 
-      if (workingEnd.difference(workingStart) < requestedDuration) {
-        continue;
-      }
-
       var cursor = workingStart;
 
       for (final busyInterval in busy) {
@@ -73,11 +63,10 @@ class AvailabilityEngine {
         }
 
         final gapEnd = _earlierOf(busyInterval.startsAt, workingEnd);
-        _addIfFits(
+        _addIfPositive(
           result,
           startsAt: cursor,
           endsAt: gapEnd,
-          requestedDuration: requestedDuration,
         );
 
         if (busyInterval.endsAt.isAfter(cursor)) {
@@ -89,15 +78,44 @@ class AvailabilityEngine {
         }
       }
 
-      _addIfFits(
+      _addIfPositive(
         result,
         startsAt: cursor,
         endsAt: workingEnd,
-        requestedDuration: requestedDuration,
       );
     }
 
     return List.unmodifiable(result);
+  }
+
+  /// Returns only continuous free intervals that can fit the requested
+  /// appointment duration.
+  List<AvailabilityInterval> findAvailableIntervals({
+    required List<AvailabilityInterval> workingIntervals,
+    required List<AvailabilityInterval> busyIntervals,
+    required int requestedDurationMinutes,
+    DateTime? notBefore,
+  }) {
+    if (requestedDurationMinutes <= 0) {
+      throw ArgumentError.value(
+        requestedDurationMinutes,
+        'requestedDurationMinutes',
+        'Requested duration must be positive.',
+      );
+    }
+
+    final requestedDuration = Duration(minutes: requestedDurationMinutes);
+    final freeIntervals = findFreeIntervals(
+      workingIntervals: workingIntervals,
+      busyIntervals: busyIntervals,
+      notBefore: notBefore,
+    );
+
+    return List.unmodifiable(
+      freeIntervals.where(
+        (interval) => interval.duration >= requestedDuration,
+      ),
+    );
   }
 
   /// Derives concrete booking starts inside already-fitted free intervals.
@@ -189,17 +207,12 @@ class AvailabilityEngine {
     return merged;
   }
 
-  void _addIfFits(
+  void _addIfPositive(
     List<AvailabilityInterval> target, {
     required DateTime startsAt,
     required DateTime endsAt,
-    required Duration requestedDuration,
   }) {
     if (!startsAt.isBefore(endsAt)) {
-      return;
-    }
-
-    if (endsAt.difference(startsAt) < requestedDuration) {
       return;
     }
 

@@ -2,6 +2,8 @@ import '../../profile/domain/doctor_profile.dart';
 import '../../profile/domain/doctor_profile_repository.dart';
 import '../../visits/domain/visit.dart';
 import '../../visits/domain/visit_repository.dart';
+import '../domain/availability_day.dart';
+import '../domain/availability_day_repository.dart';
 import '../domain/availability_engine.dart';
 import '../domain/availability_interval.dart';
 import '../domain/availability_repository.dart';
@@ -13,7 +15,8 @@ import '../domain/availability_slot.dart';
 /// persisted Visits into the generic [AvailabilityEngine] input. Calendar
 /// exceptions are intentionally not handled here yet; they will become another
 /// busy/working-interval source when their persistence is introduced.
-class ProfileVisitAvailabilityRepository implements AvailabilityRepository {
+class ProfileVisitAvailabilityRepository
+    implements AvailabilityRepository, AvailabilityDayRepository {
   factory ProfileVisitAvailabilityRepository({
     required DoctorProfileRepository profileRepository,
     required VisitQueryRepository visitQueryRepository,
@@ -51,6 +54,70 @@ class ProfileVisitAvailabilityRepository implements AvailabilityRepository {
   final AvailabilityEngine _engine;
   final DateTime Function() _now;
   final int _searchHorizonDays;
+
+  @override
+  Future<AvailabilityDay> findDayAvailability({
+    required DateTime day,
+  }) async {
+    final localDay = _localDay(day);
+    final profile = await _profileRepository.fetchCurrentProfile();
+
+    if (profile == null) {
+      return AvailabilityDay(
+        day: localDay,
+        isWorkingDay: false,
+      );
+    }
+
+    final workingInterval = _buildWorkingIntervalForDay(
+      profile: profile,
+      day: localDay,
+    );
+
+    if (workingInterval == null) {
+      return AvailabilityDay(
+        day: localDay,
+        isWorkingDay: false,
+      );
+    }
+
+    final rangeEnd = DateTime(
+      localDay.year,
+      localDay.month,
+      localDay.day + 1,
+    );
+    final visits = await _visitQueryRepository.fetchVisits(
+      from: localDay,
+      to: rangeEnd,
+    );
+    final recurringBreak = _buildRecurringBreakIntervalForDay(
+      profile: profile,
+      day: localDay,
+    );
+    final breakIntervals = recurringBreak == null
+        ? const <AvailabilityInterval>[]
+        : _clipToWorkingInterval(
+            interval: recurringBreak,
+            workingInterval: workingInterval,
+          );
+
+    final busyIntervals = <AvailabilityInterval>[
+      ...breakIntervals,
+      ..._buildVisitIntervals(visits),
+    ];
+    final availableIntervals = _engine.findFreeIntervals(
+      workingIntervals: [workingInterval],
+      busyIntervals: busyIntervals,
+      notBefore: _now().toLocal(),
+    );
+
+    return AvailabilityDay(
+      day: localDay,
+      isWorkingDay: true,
+      availableIntervals: availableIntervals,
+      breakIntervals: breakIntervals,
+    );
+  }
 
   @override
   Future<List<AvailabilitySlot>> findAvailableSlots({
@@ -132,15 +199,6 @@ class ProfileVisitAvailabilityRepository implements AvailabilityRepository {
     required DoctorProfile profile,
     required DateTime firstDay,
   }) {
-    final workdayStart = _parseTime(
-      profile.workdayStart,
-      fieldName: 'workdayStart',
-    );
-    final workdayEnd = _parseTime(
-      profile.workdayEnd,
-      fieldName: 'workdayEnd',
-    );
-    final workingDays = profile.workingDays.toSet();
     final intervals = <AvailabilityInterval>[];
 
     for (var offset = 0; offset < _searchHorizonDays; offset++) {
@@ -149,35 +207,83 @@ class ProfileVisitAvailabilityRepository implements AvailabilityRepository {
         firstDay.month,
         firstDay.day + offset,
       );
-
-      if (!workingDays.contains(day.weekday)) {
-        continue;
-      }
-
-      final startsAt = _atTime(day, workdayStart);
-      final endsAt = _atTime(day, workdayEnd);
-
-      if (!startsAt.isBefore(endsAt)) {
-        throw StateError('Doctor workday start must be before workday end.');
-      }
-
-      intervals.add(
-        AvailabilityInterval(startsAt: startsAt, endsAt: endsAt),
+      final interval = _buildWorkingIntervalForDay(
+        profile: profile,
+        day: day,
       );
+
+      if (interval != null) {
+        intervals.add(interval);
+      }
     }
 
     return intervals;
+  }
+
+  AvailabilityInterval? _buildWorkingIntervalForDay({
+    required DoctorProfile profile,
+    required DateTime day,
+  }) {
+    if (!profile.workingDays.contains(day.weekday)) {
+      return null;
+    }
+
+    final workdayStart = _parseTime(
+      profile.workdayStart,
+      fieldName: 'workdayStart',
+    );
+    final workdayEnd = _parseTime(
+      profile.workdayEnd,
+      fieldName: 'workdayEnd',
+    );
+    final startsAt = _atTime(day, workdayStart);
+    final endsAt = _atTime(day, workdayEnd);
+
+    if (!startsAt.isBefore(endsAt)) {
+      throw StateError('Doctor workday start must be before workday end.');
+    }
+
+    return AvailabilityInterval(startsAt: startsAt, endsAt: endsAt);
   }
 
   List<AvailabilityInterval> _buildRecurringBreakIntervals({
     required DoctorProfile profile,
     required DateTime firstDay,
   }) {
+    final intervals = <AvailabilityInterval>[];
+
+    for (var offset = 0; offset < _searchHorizonDays; offset++) {
+      final day = DateTime(
+        firstDay.year,
+        firstDay.month,
+        firstDay.day + offset,
+      );
+      final interval = _buildRecurringBreakIntervalForDay(
+        profile: profile,
+        day: day,
+      );
+
+      if (interval != null) {
+        intervals.add(interval);
+      }
+    }
+
+    return intervals;
+  }
+
+  AvailabilityInterval? _buildRecurringBreakIntervalForDay({
+    required DoctorProfile profile,
+    required DateTime day,
+  }) {
+    if (!profile.workingDays.contains(day.weekday)) {
+      return null;
+    }
+
     final breakStartValue = profile.breakStart;
     final breakEndValue = profile.breakEnd;
 
     if (breakStartValue == null || breakEndValue == null) {
-      return const [];
+      return null;
     }
 
     final breakStart = _parseTime(
@@ -188,33 +294,34 @@ class ProfileVisitAvailabilityRepository implements AvailabilityRepository {
       breakEndValue,
       fieldName: 'breakEnd',
     );
-    final workingDays = profile.workingDays.toSet();
-    final intervals = <AvailabilityInterval>[];
+    final startsAt = _atTime(day, breakStart);
+    final endsAt = _atTime(day, breakEnd);
 
-    for (var offset = 0; offset < _searchHorizonDays; offset++) {
-      final day = DateTime(
-        firstDay.year,
-        firstDay.month,
-        firstDay.day + offset,
-      );
-
-      if (!workingDays.contains(day.weekday)) {
-        continue;
-      }
-
-      final startsAt = _atTime(day, breakStart);
-      final endsAt = _atTime(day, breakEnd);
-
-      if (!startsAt.isBefore(endsAt)) {
-        throw StateError('Doctor break start must be before break end.');
-      }
-
-      intervals.add(
-        AvailabilityInterval(startsAt: startsAt, endsAt: endsAt),
-      );
+    if (!startsAt.isBefore(endsAt)) {
+      throw StateError('Doctor break start must be before break end.');
     }
 
-    return intervals;
+    return AvailabilityInterval(startsAt: startsAt, endsAt: endsAt);
+  }
+
+  List<AvailabilityInterval> _clipToWorkingInterval({
+    required AvailabilityInterval interval,
+    required AvailabilityInterval workingInterval,
+  }) {
+    final startsAt = interval.startsAt.isAfter(workingInterval.startsAt)
+        ? interval.startsAt
+        : workingInterval.startsAt;
+    final endsAt = interval.endsAt.isBefore(workingInterval.endsAt)
+        ? interval.endsAt
+        : workingInterval.endsAt;
+
+    if (!startsAt.isBefore(endsAt)) {
+      return const [];
+    }
+
+    return [
+      AvailabilityInterval(startsAt: startsAt, endsAt: endsAt),
+    ];
   }
 
   List<AvailabilityInterval> _buildVisitIntervals(List<Visit> visits) {
