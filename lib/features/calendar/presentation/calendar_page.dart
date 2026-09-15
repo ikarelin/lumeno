@@ -116,7 +116,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         intent: QuickCreateIntent.newVisit,
         source: QuickCreateSource.calendar,
         startsAt: _selectedDate,
-        durationMinutes: 30,
       ),
     );
     ref.invalidate(calendarDayVisitsProvider(_selectedDate));

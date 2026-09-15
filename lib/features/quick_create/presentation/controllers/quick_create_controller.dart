@@ -37,19 +37,32 @@ class QuickCreateController extends ChangeNotifier {
     required this.clinicRepository,
     required this.visitRepository,
     required this.availabilityRepository,
+    int defaultDurationMinutes = 30,
     this.clinicMembershipRepository,
-  }) : _state = QuickCreateState.fromContext(context);
+  }) : defaultDurationMinutes = defaultDurationMinutes,
+       durationPresetAnchorMinutes =
+           context.durationMinutes ?? defaultDurationMinutes,
+       _state = QuickCreateState.fromContext(
+         context.copyWith(
+           durationMinutes: context.durationMinutes ?? defaultDurationMinutes,
+         ),
+       );
 
   final PatientRepository patientRepository;
   final ClinicRepository clinicRepository;
   final ClinicMembershipRepository? clinicMembershipRepository;
   final VisitRepository visitRepository;
   final AvailabilityRepository availabilityRepository;
+  final int defaultDurationMinutes;
+  final int durationPresetAnchorMinutes;
 
   QuickCreateState _state;
   bool _disposed = false;
 
   QuickCreateState get state => _state;
+
+  List<int> get durationPresets =>
+      _buildDurationPresets(durationPresetAnchorMinutes);
 
   Future<void> load() async {
     await Future.wait([
@@ -136,16 +149,26 @@ class QuickCreateController extends ChangeNotifier {
   }
 
   Future<void> loadSuggestedSlots() async {
+    final requestedDurationMinutes = _state.durationMinutes;
+
     _setState(_state.copyWith(isLoadingSlots: true, submitError: null));
 
     try {
       final slots = await availabilityRepository.findAvailableSlots(
         from: DateTime.now(),
-        durationMinutes: _state.durationMinutes,
+        durationMinutes: requestedDurationMinutes,
       );
+
+      if (_state.durationMinutes != requestedDurationMinutes) {
+        return;
+      }
 
       _setState(_state.copyWith(suggestedSlots: slots, isLoadingSlots: false));
     } catch (error) {
+      if (_state.durationMinutes != requestedDurationMinutes) {
+        return;
+      }
+
       _setState(_state.copyWith(isLoadingSlots: false, submitError: error));
     }
   }
@@ -257,8 +280,17 @@ class QuickCreateController extends ChangeNotifier {
   }
 
   Future<void> setDurationMinutes(int durationMinutes) async {
+    if (_state.durationMinutes == durationMinutes) {
+      return;
+    }
+
     _setState(
-      _state.copyWith(durationMinutes: durationMinutes, submitError: null),
+      _state.copyWith(
+        durationMinutes: durationMinutes,
+        selectedStartsAt: null,
+        suggestedSlots: const [],
+        submitError: null,
+      ),
     );
 
     await loadSuggestedSlots();
@@ -380,4 +412,30 @@ class QuickCreateController extends ChangeNotifier {
     _disposed = true;
     super.dispose();
   }
+}
+
+const _standardVisitDurations = <int>[15, 30, 45, 60, 90, 120, 180, 240];
+
+List<int> _buildDurationPresets(int anchorMinutes) {
+  final normalizedAnchor = anchorMinutes > 0 ? anchorMinutes : 30;
+  final candidates = <int>{
+    ..._standardVisitDurations,
+    normalizedAnchor,
+  }.toList()
+    ..sort();
+
+  final anchorIndex = candidates.indexOf(normalizedAnchor);
+  var startIndex = anchorIndex > 0 ? anchorIndex - 1 : 0;
+
+  if (startIndex + 4 > candidates.length) {
+    startIndex = candidates.length - 4;
+  }
+
+  if (startIndex < 0) {
+    startIndex = 0;
+  }
+
+  return List<int>.unmodifiable(
+    candidates.skip(startIndex).take(4),
+  );
 }

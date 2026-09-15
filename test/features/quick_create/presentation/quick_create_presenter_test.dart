@@ -14,6 +14,8 @@ import 'package:lumeno/features/clinics/presentation/providers/clinic_provider.d
 import 'package:lumeno/features/quick_create/domain/quick_create_context.dart';
 import 'package:lumeno/features/quick_create/domain/quick_create_intent.dart';
 import 'package:lumeno/features/quick_create/domain/quick_create_source.dart';
+import 'package:lumeno/features/profile/domain/doctor_profile.dart';
+import 'package:lumeno/features/profile/presentation/providers/doctor_profile_provider.dart';
 import 'package:lumeno/features/quick_create/presentation/quick_create_presenter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -72,6 +74,14 @@ Future<void> _pumpLauncher(WidgetTester tester) async {
           clinicRepositoryProvider.overrideWithValue(clinicRepository),
           clinicMembershipRepositoryProvider.overrideWithValue(
             clinicRepository,
+          ),
+          doctorProfileProvider.overrideWith(
+            (ref) async => const DoctorProfile(
+              userId: 'doctor-1',
+              fullName: 'Dr Test',
+              specialty: 'Dentist',
+              defaultDurationMinutes: 60,
+            ),
           ),
         ],
         child: const _LauncherApp(),

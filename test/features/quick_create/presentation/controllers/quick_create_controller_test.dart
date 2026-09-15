@@ -8,6 +8,73 @@ import 'package:lumeno/features/quick_create/presentation/controllers/quick_crea
 
 void main() {
   group('QuickCreateController', () {
+    test('uses the Profile duration as the default and preset anchor', () {
+      final repositories = _FakeRepositories();
+      final controller = QuickCreateController(
+        context: const QuickCreateContext(
+          intent: QuickCreateIntent.newVisit,
+          source: QuickCreateSource.sidebarQuickAction,
+        ),
+        patientRepository: repositories,
+        clinicRepository: repositories,
+        visitRepository: repositories,
+        availabilityRepository: repositories,
+        defaultDurationMinutes: 60,
+      );
+
+      addTearDown(controller.dispose);
+
+      expect(controller.state.durationMinutes, 60);
+      expect(controller.durationPresets, [45, 60, 90, 120]);
+    });
+
+    test('keeps an explicit context duration and centers presets on it', () {
+      final repositories = _FakeRepositories();
+      final controller = QuickCreateController(
+        context: const QuickCreateContext(
+          intent: QuickCreateIntent.nextAvailableSlot,
+          source: QuickCreateSource.dashboardAvailableSlot,
+          durationMinutes: 45,
+        ),
+        patientRepository: repositories,
+        clinicRepository: repositories,
+        visitRepository: repositories,
+        availabilityRepository: repositories,
+        defaultDurationMinutes: 60,
+      );
+
+      addTearDown(controller.dispose);
+
+      expect(controller.state.durationMinutes, 45);
+      expect(controller.durationPresets, [30, 45, 60, 90]);
+    });
+
+    test('changing duration clears the old start and reloads availability', () async {
+      final repositories = _FakeRepositories();
+      final controller = QuickCreateController(
+        context: const QuickCreateContext(
+          intent: QuickCreateIntent.newVisit,
+          source: QuickCreateSource.sidebarQuickAction,
+        ),
+        patientRepository: repositories,
+        clinicRepository: repositories,
+        visitRepository: repositories,
+        availabilityRepository: repositories,
+        defaultDurationMinutes: 60,
+      );
+
+      addTearDown(controller.dispose);
+
+      controller.selectStartsAt(DateTime(2026, 9, 15, 9, 30));
+
+      await controller.setDurationMinutes(90);
+
+      expect(controller.state.durationMinutes, 90);
+      expect(controller.state.selectedStartsAt, isNull);
+      expect(repositories.lastAvailabilityDurationMinutes, 90);
+      expect(controller.state.suggestedSlots.single.durationMinutes, 90);
+    });
+
     test('save and schedule keeps the created patient selected', () async {
       final repositories = _FakeRepositories();
       final controller = QuickCreateController(
@@ -82,6 +149,7 @@ class _FakeRepositories
   int createPatientCalls = 0;
   int createVisitCalls = 0;
   int visitFailuresRemaining = 0;
+  int? lastAvailabilityDurationMinutes;
 
   @override
   Future<Patient> createPatient(CreatePatientInput input) async {
@@ -130,6 +198,8 @@ class _FakeRepositories
     required int durationMinutes,
     int limit = 4,
   }) async {
+    lastAvailabilityDurationMinutes = durationMinutes;
+
     return [
       AvailabilitySlot(
         startsAt: DateTime(2026, 9, 2, 11),

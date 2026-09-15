@@ -9,6 +9,7 @@ import '../../../app/theme/app_radius.dart';
 import '../../../shared/widgets/sidebar/app_sidebar.dart';
 import '../../clinics/presentation/providers/clinic_provider.dart';
 import '../../patients/presentation/providers/patient_provider.dart';
+import '../../profile/presentation/providers/doctor_profile_provider.dart';
 import '../domain/quick_create_context.dart';
 import '../domain/quick_create_intent.dart';
 import 'controllers/quick_create_controller.dart';
@@ -35,6 +36,23 @@ abstract final class QuickCreatePresenter {
       clinicMembershipRepositoryProvider,
     );
 
+    var defaultDurationMinutes = 30;
+
+    try {
+      final profile = await container.read(doctorProfileProvider.future);
+      final profileDurationMinutes = profile?.defaultDurationMinutes;
+
+      if (profileDurationMinutes != null && profileDurationMinutes > 0) {
+        defaultDurationMinutes = profileDurationMinutes;
+      }
+    } catch (_) {
+      // Quick Create should still open if Profile is temporarily unavailable.
+    }
+
+    if (!context.mounted) {
+      return null;
+    }
+
     final controller = QuickCreateController(
       context: quickCreateContext,
       patientRepository: patientRepository,
@@ -44,6 +62,7 @@ abstract final class QuickCreatePresenter {
       availabilityRepository: container.read(
         quickCreateAvailabilityRepositoryProvider,
       ),
+      defaultDurationMinutes: defaultDurationMinutes,
     );
 
     var wasSavingPatient = false;

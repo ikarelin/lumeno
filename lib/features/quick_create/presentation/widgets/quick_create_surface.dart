@@ -12,6 +12,8 @@ import '../../../../shared/widgets/app_button.dart';
 
 import '../../../../shared/widgets/app_card.dart';
 
+import '../../../scheduling/presentation/widgets/availability_date_time_picker.dart';
+
 import '../../domain/availability_slot.dart';
 
 import '../../domain/clinic.dart';
@@ -795,7 +797,7 @@ class _VisitTimeSection extends StatelessWidget {
             runSpacing: AppSpacing.sm,
 
             children: [
-              for (final duration in const [30, 45, 60])
+              for (final duration in controller.durationPresets)
                 ChoiceChip(
                   label: Text(
                     'quickCreate.visit.minutes'.tr(
@@ -862,13 +864,13 @@ class _VisitTimeSection extends StatelessWidget {
             AppButton.secondary(
               label: 'quickCreate.visit.manualTime'.tr(),
 
-              icon: Icons.edit_calendar_outlined,
+              icon: Icons.event_available_outlined,
 
               fullWidth: true,
 
               onPressed: state.isBusy
                   ? null
-                  : () => _pickManualDateTime(context),
+                  : () => _pickAvailableDateTime(context),
             ),
           ],
         ],
@@ -876,38 +878,21 @@ class _VisitTimeSection extends StatelessWidget {
     );
   }
 
-  Future<void> _pickManualDateTime(BuildContext context) async {
-    final now = DateTime.now();
-
-    final current = state.selectedStartsAt ?? now;
-
-    final date = await showDatePicker(
+  Future<void> _pickAvailableDateTime(BuildContext context) async {
+    final slot = await showAvailabilityDateTimePicker(
       context: context,
-
-      initialDate: current.isBefore(now) ? now : current,
-
-      firstDate: DateTime(now.year, now.month, now.day),
-
-      lastDate: now.add(const Duration(days: 365)),
+      availabilityRepository: controller.availabilityRepository,
+      durationMinutes: state.durationMinutes,
+      initialStartsAt: state.selectedStartsAt,
+      title: 'quickCreate.visit.manualTime'.tr(),
+      timesLabel: 'quickCreate.visit.suggestedSlots'.tr(),
     );
 
-    if (date == null || !context.mounted) {
+    if (slot == null || !context.mounted) {
       return;
     }
 
-    final time = await showTimePicker(
-      context: context,
-
-      initialTime: TimeOfDay.fromDateTime(current),
-    );
-
-    if (time == null) {
-      return;
-    }
-
-    controller.selectStartsAt(
-      DateTime(date.year, date.month, date.day, time.hour, time.minute),
-    );
+    controller.selectSlot(slot);
   }
 }
 
