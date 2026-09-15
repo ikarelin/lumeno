@@ -34,7 +34,7 @@ class SupabaseVisitRepository
         .select(_visitColumns)
         .lt('starts_at', to.toUtc().toIso8601String())
         .gt('ends_at', from.toUtc().toIso8601String())
-        .order('starts_at');
+        .order('starts_at', ascending: true);
 
     return rows.map(_mapVisit).toList(growable: false);
   }
