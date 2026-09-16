@@ -3,13 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_breakpoints.dart';
-import '../../../app/theme/app_colors.dart';
-import '../../../app/theme/app_radius.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/at_a_glance_card.dart';
 import '../../quick_create/domain/quick_create_context.dart';
 import '../../quick_create/domain/quick_create_intent.dart';
 import '../../quick_create/domain/quick_create_source.dart';
@@ -17,10 +13,11 @@ import '../../quick_create/presentation/quick_create_presenter.dart';
 import '../../scheduling/domain/availability_interval.dart';
 import '../../scheduling/presentation/providers/availability_provider.dart';
 import 'controllers/calendar_day_controller.dart';
+import 'controllers/calendar_month_controller.dart';
 import 'controllers/calendar_week_controller.dart';
 import 'views/calendar_day_view.dart';
+import 'views/calendar_month_view.dart';
 import 'views/calendar_week_view.dart';
-import 'widgets/calendar_summary.dart';
 
 enum _CalendarView { day, week, month }
 
@@ -82,7 +79,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       },
                     )
                   else
-                    _MonthView(
+                    CalendarMonthView(
                       isDesktop: isDesktop,
                       selectedDate: _selectedDate,
                       onAddVisit: _openNewVisit,
@@ -105,13 +102,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   void _goToToday() => setState(() => _selectedDate = DateTime.now());
 
   void _shiftDate(int direction) {
-    final amount = switch (_view) {
-      _CalendarView.day => 1,
-      _CalendarView.week => 7,
-      _CalendarView.month => 30,
-    };
     setState(() {
-      _selectedDate = _selectedDate.add(Duration(days: amount * direction));
+      _selectedDate = switch (_view) {
+        _CalendarView.day => _selectedDate.add(Duration(days: direction)),
+        _CalendarView.week => _selectedDate.add(Duration(days: 7 * direction)),
+        _CalendarView.month => _shiftCalendarMonth(_selectedDate, direction),
+      };
     });
   }
 
@@ -131,6 +127,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     ref.invalidate(calendarDayVisitsProvider(_selectedDate));
     ref.invalidate(calendarDayAvailabilityProvider(_selectedDate));
     ref.invalidate(calendarWeekDataProvider(_selectedDate));
+    ref.invalidate(calendarMonthDataProvider(_selectedDate));
   }
 
   Future<void> _openOverrideVisit(
@@ -150,6 +147,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     );
     ref.invalidate(calendarDayVisitsProvider(_selectedDate));
     ref.invalidate(calendarDayAvailabilityProvider(_selectedDate));
+    ref.invalidate(calendarWeekDataProvider(_selectedDate));
+    ref.invalidate(calendarMonthDataProvider(_selectedDate));
   }
 }
 
@@ -333,238 +332,10 @@ String _calendarWeekRangeLabel({
       '${DateFormat('d MMMM', locale).format(sunday)}';
 }
 
-class _MonthView extends StatelessWidget {
-  const _MonthView({
-    required this.isDesktop,
-    required this.selectedDate,
-    required this.onAddVisit,
-    required this.onSelectDay,
-  });
+DateTime _shiftCalendarMonth(DateTime date, int direction) {
+  final targetMonth = DateTime(date.year, date.month + direction, 1);
+  final lastDay = DateTime(targetMonth.year, targetMonth.month + 1, 0).day;
+  final targetDay = date.day > lastDay ? lastDay : date.day;
 
-  final bool isDesktop;
-  final DateTime selectedDate;
-  final VoidCallback onAddVisit;
-  final ValueChanged<DateTime> onSelectDay;
-
-  @override
-  Widget build(BuildContext context) {
-    final firstDay = DateTime(selectedDate.year, selectedDate.month, 1);
-    final leadingDays = firstDay.weekday - 1;
-    final daysInMonth = DateTime(
-      selectedDate.year,
-      selectedDate.month + 1,
-      0,
-    ).day;
-    final cells = List.generate(
-      leadingDays + daysInMonth,
-      (index) => index < leadingDays
-          ? null
-          : DateTime(
-              selectedDate.year,
-              selectedDate.month,
-              index - leadingDays + 1,
-            ),
-    );
-    while (cells.length % 7 != 0) {
-      cells.add(null);
-    }
-    final locale = context.locale.toLanguageTag();
-
-    final content = Column(
-      children: [
-        CalendarSummary(onAddVisit: onAddVisit, visitCount: 74),
-        const SizedBox(height: AppSpacing.md),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 68,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                      vertical: AppSpacing.md,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        DateFormat('LLLL yyyy', locale).format(selectedDate),
-                        style: AppTextStyles.titleLarge,
-                      ),
-                    ),
-                  ),
-                ),
-                Divider(
-                  height: 1,
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                SizedBox(
-                  height: 68,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: List.generate(
-                        7,
-                        (index) => Expanded(
-                          child: Center(
-                            child: Text(
-                              DateFormat(
-                                'EEEEE',
-                                locale,
-                              ).format(mondayOfWeek(index)),
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Divider(
-                  height: 1,
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                ClipRect(
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: cells.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7,
-                          mainAxisExtent: 68,
-                        ),
-                    itemBuilder: (context, index) {
-                      final date = cells[index];
-                      final isLastWeek = index >= cells.length - 7;
-                      final weekBorder = Border(
-                        bottom: isLastWeek
-                            ? BorderSide.none
-                            : BorderSide(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .outlineVariant
-                                    .withValues(alpha: 0.45),
-                              ),
-                      );
-                      if (date == null) {
-                        return DecoratedBox(
-                          decoration: BoxDecoration(border: weekBorder),
-                          child: const SizedBox.expand(),
-                        );
-                      }
-                      final isSelected = DateUtils.isSameDay(
-                        date,
-                        selectedDate,
-                      );
-                      return DecoratedBox(
-                        decoration: BoxDecoration(border: weekBorder),
-                        child: InkWell(
-                          onTap: () => onSelectDay(date),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                              child: ColoredBox(
-                                color: isSelected
-                                    ? Theme.of(context)
-                                          .colorScheme
-                                          .primaryContainer
-                                    : Colors.transparent,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      '${date.day}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                    const SizedBox(height: AppSpacing.xs),
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        color: date.weekday > DateTime.friday
-                                            ? Theme.of(context)
-                                                  .colorScheme
-                                                  .outlineVariant
-                                            : AppColors.brand,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-
-    if (!isDesktop) return content;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 7, child: content),
-        const SizedBox(width: AppSpacing.lg),
-        const Expanded(
-          flex: 3,
-          child: AtAGlanceCard(
-            title: 'calendar.legend.title',
-            metrics: [
-              AtAGlanceMetric(
-                icon: Icons.event_available_outlined,
-                value: '74',
-                label: 'calendar.glance.monthVisits',
-              ),
-              AtAGlanceMetric(
-                icon: Icons.trending_up_rounded,
-                value: '82%',
-                label: 'calendar.glance.monthLoad',
-              ),
-              AtAGlanceMetric(
-                icon: Icons.calendar_today_outlined,
-                value: '4',
-                label: 'calendar.glance.monthBusyDays',
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  DateTime mondayOfWeek(int weekday) {
-    final firstDay = DateTime(selectedDate.year, selectedDate.month, 1);
-    return firstDay
-        .subtract(Duration(days: firstDay.weekday - 1))
-        .add(Duration(days: weekday));
-  }
+  return DateTime(targetMonth.year, targetMonth.month, targetDay);
 }

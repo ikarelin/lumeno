@@ -293,6 +293,53 @@ void main() {
       });
     });
 
+    group('findRangeAvailability', () {
+      test('loads profile, Visits, and exceptions once for the whole range', () async {
+        final visits = _FakeVisitQueryRepository([
+          Visit(
+            id: 'visit-1',
+            patientId: 'patient-1',
+            clinicId: 'clinic-1',
+            startsAt: DateTime(2026, 9, 14, 10),
+            durationMinutes: 30,
+          ),
+        ]);
+        final exceptions = _FakeScheduleDayExceptionRepository([
+          ScheduleDayException(
+            day: DateTime(2026, 9, 15),
+            isWorkingDay: false,
+          ),
+          ScheduleDayException(
+            day: DateTime(2026, 9, 16),
+            isWorkingDay: true,
+          ),
+        ]);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(workingDays: const [DateTime.monday, DateTime.tuesday]),
+          ),
+          visitQueryRepository: visits,
+          scheduleDayExceptionRepository: exceptions,
+          now: () => DateTime(2026, 9, 14, 8),
+        );
+
+        final days = await repository.findRangeAvailability(
+          from: DateTime(2026, 9, 14),
+          to: DateTime(2026, 9, 17),
+        );
+
+        expect(days, hasLength(3));
+        expect(days.map((day) => day.isWorkingDay), [true, false, true]);
+        expect(days.first.availableIntervals, hasLength(3));
+        expect(visits.fetchCalls, 1);
+        expect(visits.lastFrom, DateTime(2026, 9, 14));
+        expect(visits.lastTo, DateTime(2026, 9, 17));
+        expect(exceptions.rangeFetchCalls, 1);
+        expect(exceptions.lastRangeFrom, DateTime(2026, 9, 14));
+        expect(exceptions.lastRangeTo, DateTime(2026, 9, 17));
+      });
+    });
+
     test('uses recurring work hours, break, and scheduled Visits', () async {
       final profileRepository = _FakeProfileRepository(
         _profile(
@@ -612,6 +659,9 @@ class _FakeScheduleDayExceptionRepository
   _FakeScheduleDayExceptionRepository(this.exceptions);
 
   final List<ScheduleDayException> exceptions;
+  int rangeFetchCalls = 0;
+  DateTime? lastRangeFrom;
+  DateTime? lastRangeTo;
 
   @override
   Future<ScheduleDayException?> fetchForDay({required DateTime day}) async {
@@ -628,6 +678,9 @@ class _FakeScheduleDayExceptionRepository
     required DateTime from,
     required DateTime to,
   }) async {
+    rangeFetchCalls += 1;
+    lastRangeFrom = from;
+    lastRangeTo = to;
     return exceptions
         .where((exception) =>
             !exception.day.isBefore(from) && exception.day.isBefore(to))

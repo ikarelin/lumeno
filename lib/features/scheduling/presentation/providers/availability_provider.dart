@@ -1,4 +1,3 @@
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +10,7 @@ import '../../domain/availability_day_repository.dart';
 import '../../domain/availability_engine.dart';
 import '../../domain/availability_interval.dart';
 import '../../domain/availability_repository.dart';
+import '../../domain/availability_range_repository.dart';
 import '../../domain/schedule_day_exception_repository.dart';
 
 final scheduleDayExceptionRepositoryProvider =
@@ -46,6 +46,11 @@ final availabilityRepositoryProvider = Provider<AvailabilityRepository>((ref) {
 
 final availabilityDayRepositoryProvider =
     Provider<AvailabilityDayRepository>((ref) {
+      return ref.watch(profileVisitAvailabilityRepositoryProvider);
+    });
+
+final availabilityRangeRepositoryProvider =
+    Provider<AvailabilityRangeRepository>((ref) {
       return ref.watch(profileVisitAvailabilityRepositoryProvider);
     });
 
