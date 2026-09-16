@@ -1,3 +1,4 @@
+
 import '../../profile/domain/doctor_profile.dart';
 import '../../profile/domain/doctor_profile_repository.dart';
 import '../../visits/domain/visit.dart';
@@ -9,13 +10,15 @@ import '../domain/availability_interval.dart';
 import '../domain/availability_repository.dart';
 import '../domain/availability_slot.dart';
 import '../domain/availability_start_precision.dart';
+import '../domain/schedule_day_exception.dart';
+import '../domain/schedule_day_exception_repository.dart';
 
 /// Production availability adapter for the current single-doctor MVP.
 ///
 /// The repository resolves recurring Doctor Profile scheduling defaults and
-/// persisted Visits into the generic [AvailabilityEngine] input. Calendar
-/// exceptions are intentionally not handled here yet; they will become another
-/// busy/working-interval source when their persistence is introduced.
+/// persisted Visits and one-date schedule exceptions into the generic
+/// [AvailabilityEngine] input. Recurring Doctor Profile settings remain the
+/// baseline; a persisted exception overrides only its concrete local date.
 class ProfileVisitAvailabilityRepository
     implements AvailabilityRepository, AvailabilityDayRepository {
   factory ProfileVisitAvailabilityRepository({
@@ -25,6 +28,7 @@ class ProfileVisitAvailabilityRepository
     DateTime Function()? now,
     int searchHorizonDays = 30,
     String? excludedVisitId,
+    ScheduleDayExceptionRepository? scheduleDayExceptionRepository,
   }) {
     if (searchHorizonDays <= 0) {
       throw ArgumentError.value(
@@ -45,6 +49,7 @@ class ProfileVisitAvailabilityRepository
       normalizedExcludedVisitId == null || normalizedExcludedVisitId.isEmpty
           ? null
           : normalizedExcludedVisitId,
+      scheduleDayExceptionRepository,
     );
   }
 
@@ -55,6 +60,7 @@ class ProfileVisitAvailabilityRepository
     this._now,
     this._searchHorizonDays,
     this._excludedVisitId,
+    this._scheduleDayExceptionRepository,
   );
 
   final DoctorProfileRepository _profileRepository;
@@ -63,6 +69,7 @@ class ProfileVisitAvailabilityRepository
   final DateTime Function() _now;
   final int _searchHorizonDays;
   final String? _excludedVisitId;
+  final ScheduleDayExceptionRepository? _scheduleDayExceptionRepository;
 
   @override
   Future<AvailabilityDay> findDayAvailability({
@@ -83,6 +90,9 @@ class ProfileVisitAvailabilityRepository
       localDay.month,
       localDay.day + 1,
     );
+    final exception = await _scheduleDayExceptionRepository?.fetchForDay(
+      day: localDay,
+    );
     final visits = await _visitQueryRepository.fetchVisits(
       from: localDay,
       to: rangeEnd,
@@ -93,7 +103,8 @@ class ProfileVisitAvailabilityRepository
       profile: profile,
       day: localDay,
     );
-    final isWorkingDay = profile.workingDays.contains(localDay.weekday);
+    final isWorkingDay =
+        exception?.isWorkingDay ?? profile.workingDays.contains(localDay.weekday);
 
     if (!isWorkingDay) {
       final dayOffIntervals = _engine.findFreeIntervals(
@@ -112,6 +123,7 @@ class ProfileVisitAvailabilityRepository
     final recurringBreak = _buildRecurringBreakIntervalForDay(
       profile: profile,
       day: localDay,
+      isWorkingDay: isWorkingDay,
     );
     final clippedBreakIntervals = recurringBreak == null
         ? const <AvailabilityInterval>[]
@@ -163,7 +175,7 @@ class ProfileVisitAvailabilityRepository
 
     final profile = await _profileRepository.fetchCurrentProfile();
 
-    if (profile == null || profile.workingDays.isEmpty) {
+    if (profile == null) {
       return const [];
     }
 
@@ -179,15 +191,23 @@ class ProfileVisitAvailabilityRepository
       from: firstDay,
       to: rangeEnd,
     );
+    final exceptions = await _scheduleDayExceptionRepository?.fetchForRange(
+          from: firstDay,
+          to: rangeEnd,
+        ) ??
+        const <ScheduleDayException>[];
+    final workingOverrides = _workingOverrides(exceptions);
 
     final workingIntervals = _buildWorkingIntervals(
       profile: profile,
       firstDay: firstDay,
+      workingOverrides: workingOverrides,
     );
     final busyIntervals = <AvailabilityInterval>[
       ..._buildRecurringBreakIntervals(
         profile: profile,
         firstDay: firstDay,
+        workingOverrides: workingOverrides,
       ),
       ..._buildVisitIntervals(visits),
     ];
@@ -222,6 +242,7 @@ class ProfileVisitAvailabilityRepository
   List<AvailabilityInterval> _buildWorkingIntervals({
     required DoctorProfile profile,
     required DateTime firstDay,
+    required Map<String, bool> workingOverrides,
   }) {
     final intervals = <AvailabilityInterval>[];
 
@@ -234,6 +255,7 @@ class ProfileVisitAvailabilityRepository
       final interval = _buildWorkingIntervalForDay(
         profile: profile,
         day: day,
+        workingOverrides: workingOverrides,
       );
 
       if (interval != null) {
@@ -247,8 +269,13 @@ class ProfileVisitAvailabilityRepository
   AvailabilityInterval? _buildWorkingIntervalForDay({
     required DoctorProfile profile,
     required DateTime day,
+    required Map<String, bool> workingOverrides,
   }) {
-    if (!profile.workingDays.contains(day.weekday)) {
+    if (!_isWorkingDay(
+      profile: profile,
+      day: day,
+      workingOverrides: workingOverrides,
+    )) {
       return null;
     }
 
@@ -283,6 +310,7 @@ class ProfileVisitAvailabilityRepository
   List<AvailabilityInterval> _buildRecurringBreakIntervals({
     required DoctorProfile profile,
     required DateTime firstDay,
+    required Map<String, bool> workingOverrides,
   }) {
     final intervals = <AvailabilityInterval>[];
 
@@ -295,6 +323,11 @@ class ProfileVisitAvailabilityRepository
       final interval = _buildRecurringBreakIntervalForDay(
         profile: profile,
         day: day,
+        isWorkingDay: _isWorkingDay(
+          profile: profile,
+          day: day,
+          workingOverrides: workingOverrides,
+        ),
       );
 
       if (interval != null) {
@@ -308,8 +341,9 @@ class ProfileVisitAvailabilityRepository
   AvailabilityInterval? _buildRecurringBreakIntervalForDay({
     required DoctorProfile profile,
     required DateTime day,
+    required bool isWorkingDay,
   }) {
-    if (!profile.workingDays.contains(day.weekday)) {
+    if (!isWorkingDay) {
       return null;
     }
 
@@ -356,6 +390,32 @@ class ProfileVisitAvailabilityRepository
     return [
       AvailabilityInterval(startsAt: startsAt, endsAt: endsAt),
     ];
+  }
+
+  Map<String, bool> _workingOverrides(
+    List<ScheduleDayException> exceptions,
+  ) {
+    return {
+      for (final exception in exceptions)
+        _dayKey(exception.day): exception.isWorkingDay,
+    };
+  }
+
+  bool _isWorkingDay({
+    required DoctorProfile profile,
+    required DateTime day,
+    required Map<String, bool> workingOverrides,
+  }) {
+    return workingOverrides[_dayKey(day)] ??
+        profile.workingDays.contains(day.weekday);
+  }
+
+  String _dayKey(DateTime value) {
+    final local = value.toLocal();
+    final year = local.year.toString().padLeft(4, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 
   List<AvailabilityInterval> _buildVisitIntervals(List<Visit> visits) {

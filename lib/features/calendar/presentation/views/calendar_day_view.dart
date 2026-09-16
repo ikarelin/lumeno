@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_card.dart';
@@ -84,40 +85,43 @@ class CalendarDayView extends ConsumerWidget {
 
                 return AppCard(
                   padding: EdgeInsets.zero,
-                  child: Column(
-                    children: schedule
-                        .asMap()
-                        .entries
-                        .map(
-                          (entry) => _ScheduleRow(
-                            item: entry.value,
-                            isDesktop: isDesktop,
-                            showDivider: entry.key < schedule.length - 1,
-                            onTap: switch (entry.value.kind) {
-                              _ScheduleKind.free => () {
-                                  onAddVisitAt(entry.value.startsAt);
-                                },
-                              _ScheduleKind.visit => () {
-                                  CalendarVisitDetailsSurface.show(
-                                    context: context,
-                                    visit: entry.value.visit!,
-                                    selectedDate: selectedDate,
-                                    isDesktop: isDesktop,
-                                  );
-                                },
-                              _ScheduleKind.breakTime ||
-                              _ScheduleKind.dayOff => () {
-                                  onOverrideAvailability(
-                                    AvailabilityInterval(
-                                      startsAt: entry.value.startsAt,
-                                      endsAt: entry.value.endsAt,
-                                    ),
-                                  );
-                                },
-                            },
-                          ),
-                        )
-                        .toList(),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                    child: Column(
+                      children: schedule
+                          .asMap()
+                          .entries
+                          .map(
+                            (entry) => _ScheduleRow(
+                              item: entry.value,
+                              isDesktop: isDesktop,
+                              showDivider: entry.key < schedule.length - 1,
+                              onTap: switch (entry.value.kind) {
+                                _ScheduleKind.free => () {
+                                    onAddVisitAt(entry.value.startsAt);
+                                  },
+                                _ScheduleKind.visit => () {
+                                    CalendarVisitDetailsSurface.show(
+                                      context: context,
+                                      visit: entry.value.visit!,
+                                      selectedDate: selectedDate,
+                                      isDesktop: isDesktop,
+                                    );
+                                  },
+                                _ScheduleKind.breakTime ||
+                                _ScheduleKind.dayOff => () {
+                                    onOverrideAvailability(
+                                      AvailabilityInterval(
+                                        startsAt: entry.value.startsAt,
+                                        endsAt: entry.value.endsAt,
+                                      ),
+                                    );
+                                  },
+                              },
+                            ),
+                          )
+                          .toList(),
+                    ),
                   ),
                 );
               },

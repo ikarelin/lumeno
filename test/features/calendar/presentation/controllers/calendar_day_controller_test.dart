@@ -6,6 +6,8 @@ import 'package:lumeno/features/profile/domain/doctor_profile_repository.dart';
 import 'package:lumeno/features/profile/presentation/providers/doctor_profile_provider.dart';
 import 'package:lumeno/features/scheduling/domain/availability_day.dart';
 import 'package:lumeno/features/scheduling/domain/availability_day_repository.dart';
+import 'package:lumeno/features/scheduling/domain/schedule_day_exception.dart';
+import 'package:lumeno/features/scheduling/domain/schedule_day_exception_repository.dart';
 import 'package:lumeno/features/scheduling/presentation/providers/availability_provider.dart';
 import 'package:lumeno/features/visits/domain/visit.dart';
 import 'package:lumeno/features/visits/domain/visit_repository.dart';
@@ -50,6 +52,9 @@ void main() {
         overrides: [
           doctorProfileRepositoryProvider.overrideWithValue(profileRepository),
           visitQueryRepositoryProvider.overrideWithValue(visitRepository),
+          scheduleDayExceptionRepositoryProvider.overrideWithValue(
+            _NoopScheduleDayExceptionRepository(),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -163,6 +168,32 @@ class _MutableProfileRepository implements DoctorProfileRepository {
     required String workdayEnd,
     required String? breakStart,
     required String? breakEnd,
+  }) {
+    throw UnimplementedError();
+  }
+}
+
+class _NoopScheduleDayExceptionRepository
+    implements ScheduleDayExceptionRepository {
+  @override
+  Future<ScheduleDayException?> fetchForDay({
+    required DateTime day,
+  }) async {
+    return null;
+  }
+
+  @override
+  Future<List<ScheduleDayException>> fetchForRange({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<ScheduleDayException> setWorkingDay({
+    required DateTime day,
+    required bool isWorkingDay,
   }) {
     throw UnimplementedError();
   }

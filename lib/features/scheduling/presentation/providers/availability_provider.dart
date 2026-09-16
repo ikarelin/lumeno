@@ -1,13 +1,22 @@
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../profile/presentation/providers/doctor_profile_provider.dart';
 import '../../../visits/presentation/providers/visit_provider.dart';
 import '../../data/profile_visit_availability_repository.dart';
+import '../../data/supabase_schedule_day_exception_repository.dart';
 import '../../data/visit_only_availability_repository.dart';
 import '../../domain/availability_day_repository.dart';
 import '../../domain/availability_engine.dart';
 import '../../domain/availability_interval.dart';
 import '../../domain/availability_repository.dart';
+import '../../domain/schedule_day_exception_repository.dart';
+
+final scheduleDayExceptionRepositoryProvider =
+    Provider<ScheduleDayExceptionRepository>((ref) {
+      return SupabaseScheduleDayExceptionRepository(Supabase.instance.client);
+    });
 
 final availabilityEngineProvider = Provider<AvailabilityEngine>((ref) {
   return const AvailabilityEngine();
@@ -25,6 +34,9 @@ final profileVisitAvailabilityRepositoryProvider =
         profileRepository: ref.watch(doctorProfileRepositoryProvider),
         visitQueryRepository: ref.watch(visitQueryRepositoryProvider),
         engine: ref.watch(availabilityEngineProvider),
+        scheduleDayExceptionRepository: ref.watch(
+          scheduleDayExceptionRepositoryProvider,
+        ),
       );
     });
 
@@ -50,6 +62,9 @@ final rescheduleAvailabilityRepositoryProvider =
         visitQueryRepository: ref.watch(visitQueryRepositoryProvider),
         engine: ref.watch(availabilityEngineProvider),
         excludedVisitId: visitId,
+        scheduleDayExceptionRepository: ref.watch(
+          scheduleDayExceptionRepositoryProvider,
+        ),
       );
     });
 

@@ -23,10 +23,6 @@ class CalendarSummary extends StatelessWidget {
             style: AppTextStyles.titleLarge,
           ),
         ),
-        TextButton(
-          onPressed: onAddVisit,
-          child: Text('calendar.blockTime'.tr()),
-        ),
       ],
     );
   }

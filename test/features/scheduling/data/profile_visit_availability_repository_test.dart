@@ -1,7 +1,10 @@
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lumeno/features/profile/domain/doctor_profile.dart';
 import 'package:lumeno/features/profile/domain/doctor_profile_repository.dart';
 import 'package:lumeno/features/scheduling/data/profile_visit_availability_repository.dart';
+import 'package:lumeno/features/scheduling/domain/schedule_day_exception.dart';
+import 'package:lumeno/features/scheduling/domain/schedule_day_exception_repository.dart';
 import 'package:lumeno/features/visits/domain/visit.dart';
 import 'package:lumeno/features/visits/domain/visit_repository.dart';
 
@@ -216,6 +219,56 @@ void main() {
         );
       });
 
+      test('one-date exception can turn a recurring workday into Day off', () async {
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(workingDays: const [DateTime.monday]),
+          ),
+          visitQueryRepository: _FakeVisitQueryRepository(const []),
+          scheduleDayExceptionRepository: _FakeScheduleDayExceptionRepository([
+            ScheduleDayException(
+              day: DateTime(2026, 9, 14),
+              isWorkingDay: false,
+            ),
+          ]),
+          now: () => DateTime(2026, 9, 14, 8),
+        );
+
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 9, 14),
+        );
+
+        expect(day.isWorkingDay, isFalse);
+        expect(day.availableIntervals, isEmpty);
+        expect(day.dayOffIntervals, hasLength(1));
+        expect(day.dayOffIntervals.single.startsAt, DateTime(2026, 9, 14, 9));
+        expect(day.dayOffIntervals.single.endsAt, DateTime(2026, 9, 14, 18));
+      });
+
+      test('one-date exception can turn a recurring Day off into working day', () async {
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(workingDays: const [DateTime.tuesday]),
+          ),
+          visitQueryRepository: _FakeVisitQueryRepository(const []),
+          scheduleDayExceptionRepository: _FakeScheduleDayExceptionRepository([
+            ScheduleDayException(
+              day: DateTime(2026, 9, 14),
+              isWorkingDay: true,
+            ),
+          ]),
+          now: () => DateTime(2026, 9, 14, 8),
+        );
+
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 9, 14),
+        );
+
+        expect(day.isWorkingDay, isTrue);
+        expect(day.availableIntervals, hasLength(2));
+        expect(day.breakIntervals, hasLength(1));
+      });
+
       test('does not expose past free time for today', () async {
         final repository = ProfileVisitAvailabilityRepository(
           profileRepository: _FakeProfileRepository(
@@ -335,6 +388,35 @@ void main() {
         );
       },
     );
+
+    test('slot search respects one-date working overrides', () async {
+      final repository = ProfileVisitAvailabilityRepository(
+        profileRepository: _FakeProfileRepository(
+          _profile(workingDays: const [DateTime.monday]),
+        ),
+        visitQueryRepository: _FakeVisitQueryRepository(const []),
+        scheduleDayExceptionRepository: _FakeScheduleDayExceptionRepository([
+          ScheduleDayException(
+            day: DateTime(2026, 9, 14),
+            isWorkingDay: false,
+          ),
+          ScheduleDayException(
+            day: DateTime(2026, 9, 15),
+            isWorkingDay: true,
+          ),
+        ]),
+        now: () => DateTime(2026, 9, 14, 8),
+        searchHorizonDays: 2,
+      );
+
+      final slots = await repository.findAvailableSlots(
+        from: DateTime(2026, 9, 14, 8),
+        durationMinutes: 30,
+        limit: 1,
+      );
+
+      expect(slots.single.startsAt, DateTime(2026, 9, 15, 9));
+    });
 
     test('cancelled Visit does not occupy availability', () async {
       final repository = ProfileVisitAvailabilityRepository(
@@ -522,5 +604,47 @@ class _FakeVisitQueryRepository implements VisitQueryRepository {
     lastFrom = from;
     lastTo = to;
     return visits;
+  }
+}
+
+class _FakeScheduleDayExceptionRepository
+    implements ScheduleDayExceptionRepository {
+  _FakeScheduleDayExceptionRepository(this.exceptions);
+
+  final List<ScheduleDayException> exceptions;
+
+  @override
+  Future<ScheduleDayException?> fetchForDay({required DateTime day}) async {
+    for (final exception in exceptions) {
+      if (_sameDay(exception.day, day)) {
+        return exception;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<List<ScheduleDayException>> fetchForRange({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    return exceptions
+        .where((exception) =>
+            !exception.day.isBefore(from) && exception.day.isBefore(to))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<ScheduleDayException> setWorkingDay({
+    required DateTime day,
+    required bool isWorkingDay,
+  }) {
+    throw UnimplementedError();
+  }
+
+  bool _sameDay(DateTime left, DateTime right) {
+    return left.year == right.year &&
+        left.month == right.month &&
+        left.day == right.day;
   }
 }

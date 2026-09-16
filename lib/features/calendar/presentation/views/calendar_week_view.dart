@@ -2,13 +2,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/at_a_glance_card.dart';
 import '../controllers/calendar_week_controller.dart';
 import '../widgets/calendar_summary.dart';
+import '../widgets/calendar_week_day_actions_surface.dart';
 
 class CalendarWeekView extends ConsumerWidget {
   const CalendarWeekView({
@@ -70,24 +71,38 @@ class _WeekContent extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         AppCard(
           padding: EdgeInsets.zero,
-          child: Column(
-            children: data.days
-                .asMap()
-                .entries
-                .map(
-                  (entry) => _WeekDayRow(
-                    day: entry.value,
-                    locale: locale,
-                    isSelected: DateUtils.isSameDay(
-                      entry.value.date,
-                      selectedDate,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            child: Column(
+              children: data.days
+                  .asMap()
+                  .entries
+                  .map(
+                    (entry) => _WeekDayRow(
+                      day: entry.value,
+                      locale: locale,
+                      isToday: DateUtils.isSameDay(
+                        entry.value.date,
+                        DateTime.now(),
+                      ),
+                      isDesktop: isDesktop,
+                      onTap: () async {
+                        final result = await CalendarWeekDayActionsSurface.show(
+                          context: context,
+                          day: entry.value,
+                          weekProviderKey: selectedDate,
+                          isDesktop: isDesktop,
+                        );
+
+                        if (result == CalendarWeekDayActionResult.openDay) {
+                          onSelectDay(entry.value.date);
+                        }
+                      },
+                      showDivider: entry.key < data.days.length - 1,
                     ),
-                    isDesktop: isDesktop,
-                    onTap: () => onSelectDay(entry.value.date),
-                    showDivider: entry.key < data.days.length - 1,
-                  ),
-                )
-                .toList(growable: false),
+                  )
+                  .toList(growable: false),
+            ),
           ),
         ),
       ],
@@ -132,7 +147,7 @@ class _WeekDayRow extends StatelessWidget {
   const _WeekDayRow({
     required this.day,
     required this.locale,
-    required this.isSelected,
+    required this.isToday,
     required this.isDesktop,
     required this.onTap,
     required this.showDivider,
@@ -140,7 +155,7 @@ class _WeekDayRow extends StatelessWidget {
 
   final CalendarWeekDayData day;
   final String locale;
-  final bool isSelected;
+  final bool isToday;
   final bool isDesktop;
   final VoidCallback onTap;
   final bool showDivider;
@@ -166,8 +181,8 @@ class _WeekDayRow extends StatelessWidget {
         vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: isSelected
-            ? AppColors.brand.withValues(alpha: 0.08)
+        color: isToday
+            ? colorScheme.primary.withValues(alpha: 0.08)
             : isDayOff
             ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.38)
             : null,
@@ -215,13 +230,39 @@ class _WeekDayRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  DateFormat('d MMMM', locale).format(day.date),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        DateFormat('d MMMM', locale).format(day.date),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (isToday) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'calendar.today'.tr(),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -249,7 +290,6 @@ class _WeekDayRow extends StatelessWidget {
       child: InkWell(onTap: onTap, child: row),
     );
   }
-
 }
 
 class _WeekLoadErrorCard extends StatelessWidget {

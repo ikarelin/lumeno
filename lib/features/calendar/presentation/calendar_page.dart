@@ -177,10 +177,12 @@ class _CalendarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.toLanguageTag();
-    final dateLabel = DateFormat(
-      isDesktop ? 'EEEE, d MMMM' : 'd MMMM',
-      locale,
-    ).format(selectedDate);
+    final dateLabel = _calendarHeaderDateLabel(
+      selectedDate: selectedDate,
+      view: view,
+      locale: locale,
+      isDesktop: isDesktop,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,6 +280,57 @@ class _CalendarHeader extends StatelessWidget {
       ],
     );
   }
+}
+
+
+String _calendarHeaderDateLabel({
+  required DateTime selectedDate,
+  required _CalendarView view,
+  required String locale,
+  required bool isDesktop,
+}) {
+  return switch (view) {
+    _CalendarView.day => DateFormat(
+        isDesktop ? 'EEEE, d MMMM' : 'd MMMM',
+        locale,
+      ).format(selectedDate),
+    _CalendarView.week => _calendarWeekRangeLabel(
+        selectedDate: selectedDate,
+        locale: locale,
+      ),
+    _CalendarView.month => DateFormat(
+        'LLLL yyyy',
+        locale,
+      ).format(selectedDate),
+  };
+}
+
+String _calendarWeekRangeLabel({
+  required DateTime selectedDate,
+  required String locale,
+}) {
+  final day = DateTime(
+    selectedDate.year,
+    selectedDate.month,
+    selectedDate.day,
+  );
+  final monday = day.subtract(
+    Duration(days: day.weekday - DateTime.monday),
+  );
+  final sunday = monday.add(const Duration(days: 6));
+
+  if (monday.year != sunday.year) {
+    return '${DateFormat('d MMMM yyyy', locale).format(monday)} – '
+        '${DateFormat('d MMMM yyyy', locale).format(sunday)}';
+  }
+
+  if (monday.month != sunday.month) {
+    return '${DateFormat('d MMMM', locale).format(monday)} – '
+        '${DateFormat('d MMMM', locale).format(sunday)}';
+  }
+
+  return '${DateFormat('d', locale).format(monday)}–'
+      '${DateFormat('d MMMM', locale).format(sunday)}';
 }
 
 class _MonthView extends StatelessWidget {
