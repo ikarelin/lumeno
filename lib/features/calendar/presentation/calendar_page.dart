@@ -17,7 +17,9 @@ import '../../quick_create/presentation/quick_create_presenter.dart';
 import '../../scheduling/domain/availability_interval.dart';
 import '../../scheduling/presentation/providers/availability_provider.dart';
 import 'controllers/calendar_day_controller.dart';
+import 'controllers/calendar_week_controller.dart';
 import 'views/calendar_day_view.dart';
+import 'views/calendar_week_view.dart';
 import 'widgets/calendar_summary.dart';
 
 enum _CalendarView { day, week, month }
@@ -68,7 +70,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       onOverrideAvailability: _openOverrideVisit,
                     )
                   else if (_view == _CalendarView.week)
-                    _WeekView(
+                    CalendarWeekView(
                       isDesktop: isDesktop,
                       selectedDate: _selectedDate,
                       onAddVisit: _openNewVisit,
@@ -128,8 +130,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     );
     ref.invalidate(calendarDayVisitsProvider(_selectedDate));
     ref.invalidate(calendarDayAvailabilityProvider(_selectedDate));
+    ref.invalidate(calendarWeekDataProvider(_selectedDate));
   }
-
 
   Future<void> _openOverrideVisit(
     AvailabilityInterval allowedInterval,
@@ -274,208 +276,6 @@ class _CalendarHeader extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-class _WeekView extends StatelessWidget {
-  const _WeekView({
-    required this.isDesktop,
-    required this.selectedDate,
-    required this.onAddVisit,
-    required this.onSelectDay,
-  });
-
-  final bool isDesktop;
-  final DateTime selectedDate;
-  final VoidCallback onAddVisit;
-  final ValueChanged<DateTime> onSelectDay;
-
-  @override
-  Widget build(BuildContext context) {
-    final monday = selectedDate.subtract(
-      Duration(days: selectedDate.weekday - 1),
-    );
-    final locale = context.locale.toLanguageTag();
-
-    final content = Column(
-      children: [
-        CalendarSummary(onAddVisit: onAddVisit, visitCount: 18),
-        const SizedBox(height: AppSpacing.md),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            child: Column(
-              children: [
-                for (var index = 0; index < 7; index++) ...[
-                  _WeekDayRow(
-                    date: monday.add(Duration(days: index)),
-                    locale: locale,
-                    isSelected: DateUtils.isSameDay(
-                      monday.add(Duration(days: index)),
-                      selectedDate,
-                    ),
-                    isWeekend:
-                        monday.add(Duration(days: index)).weekday >
-                        DateTime.friday,
-                    summary:
-                        monday.add(Duration(days: index)).weekday >
-                            DateTime.friday
-                        ? 'calendar.weekend'.tr()
-                        : index.isEven
-                        ? 'calendar.weekSummary'.tr(args: ['2', '3'])
-                        : 'calendar.weekSummary'.tr(args: ['4', '2']),
-                    onTap: () => onSelectDay(monday.add(Duration(days: index))),
-                    showDivider: index < 6,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-
-    if (!isDesktop) return content;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 7, child: content),
-        const SizedBox(width: AppSpacing.lg),
-        const Expanded(
-          flex: 3,
-          child: AtAGlanceCard(
-            title: 'calendar.legend.title',
-            metrics: [
-              AtAGlanceMetric(
-                icon: Icons.event_available_outlined,
-                value: '18',
-                label: 'calendar.glance.weekVisits',
-              ),
-              AtAGlanceMetric(
-                icon: Icons.schedule_outlined,
-                value: '12',
-                label: 'calendar.glance.weekFreeWindows',
-              ),
-              AtAGlanceMetric(
-                icon: Icons.today_outlined,
-                value: '5',
-                label: 'calendar.glance.weekWorkingDays',
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WeekDayRow extends StatelessWidget {
-  const _WeekDayRow({
-    required this.date,
-    required this.locale,
-    required this.isSelected,
-    required this.isWeekend,
-    required this.summary,
-    required this.onTap,
-    required this.showDivider,
-  });
-
-  final DateTime date;
-  final String locale;
-  final bool isSelected;
-  final bool isWeekend;
-  final String summary;
-  final VoidCallback onTap;
-  final bool showDivider;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final accentColor = isWeekend
-        ? colorScheme.onSurfaceVariant
-        : colorScheme.primary;
-
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: showDivider
-                ? BorderSide(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.45),
-                  )
-                : BorderSide.none,
-          ),
-          color: isSelected
-              ? colorScheme.primaryContainer.withValues(alpha: 0.55)
-              : null,
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 88,
-              child: Text(
-                DateFormat('EEE', locale).format(date),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: accentColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                isWeekend
-                    ? Icons.remove_circle_outline_rounded
-                    : Icons.calendar_today_outlined,
-                size: 19,
-                color: accentColor,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    DateFormat('d MMMM', locale).format(date),
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    summary,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
