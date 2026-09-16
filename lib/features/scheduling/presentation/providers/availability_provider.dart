@@ -37,6 +37,22 @@ final availabilityDayRepositoryProvider =
       return ref.watch(profileVisitAvailabilityRepositoryProvider);
     });
 
+final rescheduleAvailabilityRepositoryProvider =
+    Provider.family<AvailabilityRepository, String>((ref, visitId) {
+      // Rescheduling uses the same production Profile + Visit availability path
+      // as normal booking, excluding only the Visit being moved so it does not
+      // conflict with itself. All other Visits and recurring schedule
+      // constraints remain active.
+      ref.watch(doctorProfileProvider.future);
+
+      return ProfileVisitAvailabilityRepository(
+        profileRepository: ref.watch(doctorProfileRepositoryProvider),
+        visitQueryRepository: ref.watch(visitQueryRepositoryProvider),
+        engine: ref.watch(availabilityEngineProvider),
+        excludedVisitId: visitId,
+      );
+    });
+
 final visitOnlyAvailabilityRepositoryProvider =
     Provider.family<AvailabilityRepository, AvailabilityInterval>(
       (ref, allowedInterval) {

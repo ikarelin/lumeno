@@ -285,6 +285,57 @@ void main() {
       expect(slots.every((slot) => slot.durationMinutes == 30), isTrue);
     });
 
+    test(
+      'can exclude only the Visit being moved from availability',
+      () async {
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(
+              workingDays: const [DateTime.monday],
+              breakStart: null,
+              breakEnd: null,
+            ),
+          ),
+          visitQueryRepository: _FakeVisitQueryRepository([
+            Visit(
+              id: 'current-visit',
+              patientId: 'patient-1',
+              clinicId: 'clinic-1',
+              startsAt: DateTime(2026, 9, 14, 10),
+              durationMinutes: 30,
+            ),
+            Visit(
+              id: 'other-visit',
+              patientId: 'patient-2',
+              clinicId: 'clinic-1',
+              startsAt: DateTime(2026, 9, 14, 11),
+              durationMinutes: 30,
+            ),
+          ]),
+          excludedVisitId: 'current-visit',
+          now: () => DateTime(2026, 9, 14, 8),
+        );
+
+        final slots = await repository.findAvailableSlots(
+          from: DateTime(2026, 9, 14, 9),
+          durationMinutes: 30,
+          limit: 6,
+        );
+
+        expect(
+          slots.map((slot) => slot.startsAt),
+          [
+            DateTime(2026, 9, 14, 9),
+            DateTime(2026, 9, 14, 9, 30),
+            DateTime(2026, 9, 14, 10),
+            DateTime(2026, 9, 14, 10, 30),
+            DateTime(2026, 9, 14, 11, 30),
+            DateTime(2026, 9, 14, 12),
+          ],
+        );
+      },
+    );
+
     test('cancelled Visit does not occupy availability', () async {
       final repository = ProfileVisitAvailabilityRepository(
         profileRepository: _FakeProfileRepository(

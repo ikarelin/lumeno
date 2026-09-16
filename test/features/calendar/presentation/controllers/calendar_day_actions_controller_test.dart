@@ -27,6 +27,30 @@ void main() {
       expect(updated.note, 'Updated context');
     });
 
+    test('reschedules visit while preserving non-time fields', () async {
+      final repository = _FakeVisitManagementRepository();
+      final controller = CalendarDayActionsController(repository: repository);
+      final visit = _visit();
+      final startsAt = DateTime(2026, 9, 15, 14, 30);
+
+      final updated = await controller.rescheduleVisit(
+        visit: visit,
+        startsAt: startsAt,
+      );
+
+      final input = repository.lastUpdateInput;
+      expect(input, isNotNull);
+      expect(input!.visitId, visit.id);
+      expect(input.patientId, visit.patientId);
+      expect(input.clinicId, visit.clinicId);
+      expect(input.startsAt, startsAt);
+      expect(input.durationMinutes, visit.durationMinutes);
+      expect(input.note, visit.note);
+      expect(updated.startsAt, startsAt);
+      expect(updated.durationMinutes, visit.durationMinutes);
+      expect(updated.note, visit.note);
+    });
+
     test('cancels the selected visit', () async {
       final repository = _FakeVisitManagementRepository();
       final controller = CalendarDayActionsController(repository: repository);

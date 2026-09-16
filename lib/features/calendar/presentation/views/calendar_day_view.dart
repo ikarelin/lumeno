@@ -174,6 +174,7 @@ class _ScheduleRow extends StatelessWidget {
     final isFree = item.kind == _ScheduleKind.free;
     final isBreak = item.kind == _ScheduleKind.breakTime;
     final isDayOff = item.kind == _ScheduleKind.dayOff;
+    final isVisit = item.kind == _ScheduleKind.visit;
     final isSoftUnavailable = isBreak || isDayOff;
     final accentColor = isFree
         ? colorScheme.outlineVariant
@@ -187,7 +188,9 @@ class _ScheduleRow extends StatelessWidget {
         vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: isSoftUnavailable
+        color: isVisit
+            ? accentColor.withValues(alpha: 0.08)
+            : isSoftUnavailable
             ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.38)
             : null,
         border: Border(
@@ -255,7 +258,9 @@ class _ScheduleRow extends StatelessWidget {
                 if (item.subtitle != null) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    item.subtitle!.tr(),
+                    item.kind == _ScheduleKind.visit
+                        ? item.subtitle!
+                        : item.subtitle!.tr(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -403,7 +408,9 @@ class _ScheduleItem {
           end: end,
           label:
               '$patientLabel ${item.visit!.patientName ?? item.visit!.patientId}',
-          subtitle: 'calendar.appointmentTypes.consultation',
+          subtitle: item.visit!.note.trim().isEmpty
+              ? null
+              : item.visit!.note.trim(),
           color: AppColors.brand,
           visit: item.visit,
         ),

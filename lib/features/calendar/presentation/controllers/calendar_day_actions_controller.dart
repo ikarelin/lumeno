@@ -33,6 +33,22 @@ class CalendarDayActionsController {
     );
   }
 
+  Future<Visit> rescheduleVisit({
+    required Visit visit,
+    required DateTime startsAt,
+  }) {
+    return repository.updateVisit(
+      UpdateVisitInput(
+        visitId: visit.id,
+        patientId: visit.patientId,
+        clinicId: visit.clinicId,
+        startsAt: startsAt,
+        durationMinutes: visit.durationMinutes,
+        note: visit.note,
+      ),
+    );
+  }
+
   Future<void> cancelVisit(Visit visit) {
     return repository.cancelVisit(visitId: visit.id);
   }

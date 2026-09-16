@@ -19,7 +19,7 @@ class CalendarSummary extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            'calendar.visitSummary'.tr(args: ['$visitCount']),
+            '${'calendar.legend.visits'.tr()} ($visitCount)',
             style: AppTextStyles.titleLarge,
           ),
         ),
@@ -31,4 +31,3 @@ class CalendarSummary extends StatelessWidget {
     );
   }
 }
-

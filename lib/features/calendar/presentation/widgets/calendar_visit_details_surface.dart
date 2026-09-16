@@ -6,6 +6,8 @@ import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../scheduling/presentation/providers/availability_provider.dart';
+import '../../../scheduling/presentation/widgets/availability_date_time_picker.dart';
 import '../../../visits/domain/visit.dart';
 import '../controllers/calendar_day_actions_controller.dart';
 import '../controllers/calendar_day_controller.dart';
@@ -115,6 +117,60 @@ class _CalendarVisitDetailsSurfaceState
         _isEditing = false;
         _isBusy = false;
       });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBusy = false;
+        _errorMessage = 'quickCreate.errors.saveFailed'.tr();
+      });
+    }
+  }
+
+  Future<void> _rescheduleVisit() async {
+    final availabilityRepository = ref.read(
+      rescheduleAvailabilityRepositoryProvider(_visit.id),
+    );
+
+    final slot = await showAvailabilityDateTimePicker(
+      context: context,
+      availabilityRepository: availabilityRepository,
+      durationMinutes: _visit.durationMinutes,
+      initialStartsAt: _visit.startsAt,
+      title: 'quickCreate.visit.manualTime'.tr(),
+      timesLabel: 'quickCreate.visit.suggestedSlots'.tr(),
+    );
+
+    if (slot == null || !mounted || slot.startsAt == _visit.startsAt) {
+      return;
+    }
+
+    setState(() {
+      _isBusy = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final updated = await ref
+          .read(calendarDayActionsControllerProvider)
+          .rescheduleVisit(visit: _visit, startsAt: slot.startsAt);
+
+      ref.invalidate(calendarDayVisitsProvider(widget.selectedDate));
+      ref.invalidate(calendarDayAvailabilityProvider(widget.selectedDate));
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _visit = updated;
+        _noteController.text = updated.note;
+        _isBusy = false;
+      });
+
+      Navigator.of(context).pop();
     } catch (_) {
       if (!mounted) {
         return;
@@ -319,6 +375,15 @@ class _CalendarVisitDetailsSurfaceState
           const SizedBox(height: AppSpacing.xs),
           Text(note, style: AppTextStyles.bodyLarge),
           const SizedBox(height: AppSpacing.lg),
+        ],
+        if (_visit.status == VisitStatus.scheduled) ...[
+          AppButton.secondary(
+            label: 'quickCreate.visit.manualTime'.tr(),
+            icon: Icons.event_available_outlined,
+            fullWidth: true,
+            onPressed: _isBusy ? null : _rescheduleVisit,
+          ),
+          const SizedBox(height: AppSpacing.sm),
         ],
         if (widget.isDesktop)
           Row(

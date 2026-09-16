@@ -24,6 +24,7 @@ class ProfileVisitAvailabilityRepository
     AvailabilityEngine engine = const AvailabilityEngine(),
     DateTime Function()? now,
     int searchHorizonDays = 30,
+    String? excludedVisitId,
   }) {
     if (searchHorizonDays <= 0) {
       throw ArgumentError.value(
@@ -33,12 +34,17 @@ class ProfileVisitAvailabilityRepository
       );
     }
 
+    final normalizedExcludedVisitId = excludedVisitId?.trim();
+
     return ProfileVisitAvailabilityRepository._(
       profileRepository,
       visitQueryRepository,
       engine,
       now ?? DateTime.now,
       searchHorizonDays,
+      normalizedExcludedVisitId == null || normalizedExcludedVisitId.isEmpty
+          ? null
+          : normalizedExcludedVisitId,
     );
   }
 
@@ -48,6 +54,7 @@ class ProfileVisitAvailabilityRepository
     this._engine,
     this._now,
     this._searchHorizonDays,
+    this._excludedVisitId,
   );
 
   final DoctorProfileRepository _profileRepository;
@@ -55,6 +62,7 @@ class ProfileVisitAvailabilityRepository
   final AvailabilityEngine _engine;
   final DateTime Function() _now;
   final int _searchHorizonDays;
+  final String? _excludedVisitId;
 
   @override
   Future<AvailabilityDay> findDayAvailability({
@@ -352,6 +360,10 @@ class ProfileVisitAvailabilityRepository
 
   List<AvailabilityInterval> _buildVisitIntervals(List<Visit> visits) {
     return visits
+        .where(
+          (visit) =>
+              _excludedVisitId == null || visit.id != _excludedVisitId,
+        )
         .where((visit) => visit.occupiesAvailability)
         .where((visit) => visit.startsAt.isBefore(visit.endsAt))
         .map(
