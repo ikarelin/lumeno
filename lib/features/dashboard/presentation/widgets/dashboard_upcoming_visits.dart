@@ -2,26 +2,40 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_card.dart';
 
 class DashboardUpcomingVisit {
   const DashboardUpcomingVisit({
     required this.timeLabel,
     required this.patientName,
-    required this.appointmentType,
+    required this.detail,
     this.onTap,
   });
 
   final String timeLabel;
   final String patientName;
-  final String appointmentType;
+  final String detail;
   final VoidCallback? onTap;
 }
 
 class DashboardUpcomingVisits extends StatelessWidget {
-  const DashboardUpcomingVisits({super.key, required this.visits});
+  const DashboardUpcomingVisits({
+    super.key,
+    this.visits = const [],
+    this.message,
+    this.actionLabel,
+    this.onAction,
+    this.isLoading = false,
+    this.isError = false,
+  });
 
   final List<DashboardUpcomingVisit> visits;
+  final String? message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  final bool isLoading;
+  final bool isError;
 
   @override
   Widget build(BuildContext context) {
@@ -31,20 +45,75 @@ class DashboardUpcomingVisits extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        child: Column(
-          children: [
-            for (var i = 0; i < visits.length; i++) ...[
-              _UpcomingVisitRow(visit: visits[i]),
-              if (i < visits.length - 1)
-                Divider(
-                  height: 1,
-                  indent: AppSpacing.lg,
-                  endIndent: AppSpacing.lg,
-                  color: colorScheme.outlineVariant,
-                ),
-            ],
+        child: isLoading
+            ? const SizedBox(
+                height: 116,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : visits.isEmpty
+            ? _EmptyState(
+                message: message ?? '—',
+                actionLabel: actionLabel,
+                onAction: onAction,
+                isError: isError,
+              )
+            : Column(
+                children: [
+                  for (var i = 0; i < visits.length; i++) ...[
+                    _UpcomingVisitRow(visit: visits[i]),
+                    if (i < visits.length - 1)
+                      Divider(
+                        height: 1,
+                        indent: AppSpacing.lg,
+                        endIndent: AppSpacing.lg,
+                        color: colorScheme.outlineVariant,
+                      ),
+                  ],
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+    required this.isError,
+  });
+
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final accent = isError ? colorScheme.error : colorScheme.onSurfaceVariant;
+
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline_rounded : Icons.event_busy_outlined,
+            color: accent,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.bodyLarge.copyWith(color: accent),
+            ),
+          ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(width: AppSpacing.md),
+            TextButton(onPressed: onAction, child: Text(actionLabel!)),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -111,7 +180,7 @@ class _UpcomingVisitRow extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      visit.appointmentType,
+                      visit.detail,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(

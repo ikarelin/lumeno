@@ -28,7 +28,8 @@
       "followUp": "Follow-up visit",
       "consultation": "Consultation",
       "treatment": "Treatment session"
-    }
+    },
+    "noUpcomingVisits": "No upcoming visits"
   },
   "quickCreate": {
     "newPatient": {
