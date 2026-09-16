@@ -6,8 +6,10 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_card.dart';
+import '../../../scheduling/domain/availability_interval.dart';
 import '../../../visits/domain/visit.dart';
 import '../controllers/calendar_day_controller.dart';
+import '../models/calendar_day_timeline_item.dart';
 import '../widgets/calendar_summary.dart';
 import '../widgets/calendar_visit_details_surface.dart';
 
@@ -17,15 +19,22 @@ class CalendarDayView extends ConsumerWidget {
     required this.selectedDate,
     required this.isDesktop,
     required this.onAddVisit,
+    required this.onAddVisitAt,
+    required this.onOverrideAvailability,
   });
 
   final DateTime selectedDate;
   final bool isDesktop;
   final VoidCallback onAddVisit;
+  final ValueChanged<DateTime> onAddVisitAt;
+  final ValueChanged<AvailabilityInterval> onOverrideAvailability;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final visits = ref.watch(calendarDayVisitsProvider(selectedDate));
+    final availability = ref.watch(
+      calendarDayAvailabilityProvider(selectedDate),
+    );
     final locale = context.locale.toLanguageTag();
     final scheduledVisits = visits is AsyncData<List<Visit>>
         ? visits.value
@@ -43,66 +52,75 @@ class CalendarDayView extends ConsumerWidget {
         const SizedBox(height: AppSpacing.md),
         visits.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => AppCard(
-            child: Text(
-              'calendar.loadError'.tr(),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-          ),
+          error: (error, _) => _LoadErrorCard(),
           data: (items) {
-            final scheduledItems = items
-                .where((visit) => visit.status == VisitStatus.scheduled)
-                .toList(growable: false);
+            return availability.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => _LoadErrorCard(),
+              data: (dayAvailability) {
+                final timeline = buildCalendarDayTimeline(
+                  visits: items,
+                  availability: dayAvailability,
+                );
 
-            if (scheduledItems.isEmpty) {
-              return AppCard(
-                child: Text(
-                  'calendar.noVisits'.tr(),
-                  style: AppTextStyles.bodyLarge,
-                ),
-              );
-            }
+                if (timeline.isEmpty) {
+                  return AppCard(
+                    child: Text(
+                      'calendar.noVisits'.tr(),
+                      style: AppTextStyles.bodyLarge,
+                    ),
+                  );
+                }
 
-            final schedule = scheduledItems
-                .map(
-                  (visit) => _ScheduleItem.visit(
-                    visit,
-                    DateFormat('HH:mm', locale).format(visit.startsAt),
-                    DateFormat('HH:mm', locale).format(visit.endsAt),
-                    '${'calendar.patient'.tr()} ${visit.patientName ?? visit.patientId}',
-                    'calendar.appointmentTypes.consultation',
-                    AppColors.brand,
-                  ),
-                )
-                .toList(growable: false);
-
-            return AppCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: schedule
-                    .asMap()
-                    .entries
+                final schedule = timeline
                     .map(
-                      (entry) => _ScheduleRow(
-                        item: entry.value,
-                        isDesktop: isDesktop,
-                        showDivider: entry.key < schedule.length - 1,
-                        onTap: entry.value.visit == null
-                            ? null
-                            : () {
-                                CalendarVisitDetailsSurface.show(
-                                  context: context,
-                                  visit: entry.value.visit!,
-                                  selectedDate: selectedDate,
-                                  isDesktop: isDesktop,
-                                );
-                              },
+                      (item) => _ScheduleItem.fromTimeline(
+                        item,
+                        locale: locale,
+                        patientLabel: 'calendar.patient'.tr(),
                       ),
                     )
-                    .toList(),
-              ),
+                    .toList(growable: false);
+
+                return AppCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: schedule
+                        .asMap()
+                        .entries
+                        .map(
+                          (entry) => _ScheduleRow(
+                            item: entry.value,
+                            isDesktop: isDesktop,
+                            showDivider: entry.key < schedule.length - 1,
+                            onTap: switch (entry.value.kind) {
+                              _ScheduleKind.free => () {
+                                  onAddVisitAt(entry.value.startsAt);
+                                },
+                              _ScheduleKind.visit => () {
+                                  CalendarVisitDetailsSurface.show(
+                                    context: context,
+                                    visit: entry.value.visit!,
+                                    selectedDate: selectedDate,
+                                    isDesktop: isDesktop,
+                                  );
+                                },
+                              _ScheduleKind.breakTime ||
+                              _ScheduleKind.dayOff => () {
+                                  onOverrideAvailability(
+                                    AvailabilityInterval(
+                                      startsAt: entry.value.startsAt,
+                                      endsAt: entry.value.endsAt,
+                                    ),
+                                  );
+                                },
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                );
+              },
             );
           },
         ),
@@ -118,6 +136,20 @@ class CalendarDayView extends ConsumerWidget {
         const SizedBox(width: AppSpacing.lg),
         const Expanded(flex: 3, child: _DayLegend()),
       ],
+    );
+  }
+}
+
+class _LoadErrorCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Text(
+        'calendar.loadError'.tr(),
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: Theme.of(context).colorScheme.error,
+        ),
+      ),
     );
   }
 }
@@ -141,9 +173,11 @@ class _ScheduleRow extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final isFree = item.kind == _ScheduleKind.free;
     final isBreak = item.kind == _ScheduleKind.breakTime;
+    final isDayOff = item.kind == _ScheduleKind.dayOff;
+    final isSoftUnavailable = isBreak || isDayOff;
     final accentColor = isFree
         ? colorScheme.outlineVariant
-        : isBreak
+        : isSoftUnavailable
         ? colorScheme.outline
         : item.color!;
 
@@ -153,7 +187,7 @@ class _ScheduleRow extends StatelessWidget {
         vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: isBreak
+        color: isSoftUnavailable
             ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.38)
             : null,
         border: Border(
@@ -171,7 +205,7 @@ class _ScheduleRow extends StatelessWidget {
             child: Text(
               '${item.start} - ${item.end}',
               style: theme.textTheme.titleMedium?.copyWith(
-                color: isBreak
+                color: isSoftUnavailable
                     ? colorScheme.onSurfaceVariant
                     : colorScheme.primary,
                 fontWeight: FontWeight.w700,
@@ -192,6 +226,8 @@ class _ScheduleRow extends StatelessWidget {
                   ? Icons.add_circle_outline_rounded
                   : isBreak
                   ? Icons.pause_circle_outline_rounded
+                  : isDayOff
+                  ? Icons.event_busy_outlined
                   : Icons.person_outline_rounded,
               size: 19,
               color: accentColor,
@@ -205,6 +241,8 @@ class _ScheduleRow extends StatelessWidget {
                 Text(
                   isBreak
                       ? 'calendar.break'.tr()
+                      : isDayOff
+                      ? 'calendar.weekend'.tr()
                       : isFree
                       ? item.label.tr()
                       : item.label,
@@ -228,7 +266,7 @@ class _ScheduleRow extends StatelessWidget {
               ],
             ),
           ),
-          if (isFree || item.kind == _ScheduleKind.visit)
+          if (isFree || isSoftUnavailable || item.kind == _ScheduleKind.visit)
             Icon(
               Icons.chevron_right_rounded,
               color: colorScheme.onSurfaceVariant,
@@ -309,11 +347,13 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-enum _ScheduleKind { free, visit, breakTime }
+enum _ScheduleKind { free, visit, breakTime, dayOff }
 
 class _ScheduleItem {
   const _ScheduleItem({
     required this.kind,
+    required this.startsAt,
+    required this.endsAt,
     required this.start,
     required this.end,
     required this.label,
@@ -322,24 +362,57 @@ class _ScheduleItem {
     this.visit,
   });
 
-  factory _ScheduleItem.visit(
-    Visit visit,
-    String start,
-    String end,
-    String label,
-    String subtitle,
-    Color color,
-  ) => _ScheduleItem(
-    kind: _ScheduleKind.visit,
-    start: start,
-    end: end,
-    label: label,
-    subtitle: subtitle,
-    color: color,
-    visit: visit,
-  );
+  factory _ScheduleItem.fromTimeline(
+    CalendarDayTimelineItem item, {
+    required String locale,
+    required String patientLabel,
+  }) {
+    final start = DateFormat('HH:mm', locale).format(item.startsAt);
+    final end = DateFormat('HH:mm', locale).format(item.endsAt);
+
+    return switch (item.kind) {
+      CalendarDayTimelineItemKind.free => _ScheduleItem(
+          kind: _ScheduleKind.free,
+          startsAt: item.startsAt,
+          endsAt: item.endsAt,
+          start: start,
+          end: end,
+          label: 'calendar.legend.free',
+        ),
+      CalendarDayTimelineItemKind.breakTime => _ScheduleItem(
+          kind: _ScheduleKind.breakTime,
+          startsAt: item.startsAt,
+          endsAt: item.endsAt,
+          start: start,
+          end: end,
+          label: 'calendar.break',
+        ),
+      CalendarDayTimelineItemKind.dayOff => _ScheduleItem(
+          kind: _ScheduleKind.dayOff,
+          startsAt: item.startsAt,
+          endsAt: item.endsAt,
+          start: start,
+          end: end,
+          label: 'calendar.weekend',
+        ),
+      CalendarDayTimelineItemKind.visit => _ScheduleItem(
+          kind: _ScheduleKind.visit,
+          startsAt: item.startsAt,
+          endsAt: item.endsAt,
+          start: start,
+          end: end,
+          label:
+              '$patientLabel ${item.visit!.patientName ?? item.visit!.patientId}',
+          subtitle: 'calendar.appointmentTypes.consultation',
+          color: AppColors.brand,
+          visit: item.visit,
+        ),
+    };
+  }
 
   final _ScheduleKind kind;
+  final DateTime startsAt;
+  final DateTime endsAt;
   final String start;
   final String end;
   final String label;

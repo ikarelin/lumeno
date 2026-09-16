@@ -151,6 +151,7 @@ class _CalendarVisitDetailsSurfaceState
       }
 
       ref.invalidate(calendarDayVisitsProvider(widget.selectedDate));
+      ref.invalidate(calendarDayAvailabilityProvider(widget.selectedDate));
 
       if (!mounted) {
         return;

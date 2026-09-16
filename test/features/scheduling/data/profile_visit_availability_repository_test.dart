@@ -121,11 +121,23 @@ void main() {
         );
       });
 
-      test('returns a non-working day without querying Visits', () async {
-        final visits = _FakeVisitQueryRepository(const []);
+      test('returns recurring day-off intervals split around Visits', () async {
+        final visits = _FakeVisitQueryRepository([
+          Visit(
+            id: 'urgent-visit',
+            patientId: 'patient-1',
+            clinicId: 'clinic-1',
+            startsAt: DateTime(2026, 9, 14, 10),
+            durationMinutes: 30,
+          ),
+        ]);
         final repository = ProfileVisitAvailabilityRepository(
           profileRepository: _FakeProfileRepository(
-            _profile(workingDays: const [DateTime.tuesday]),
+            _profile(
+              workingDays: const [DateTime.tuesday],
+              workdayStart: '09:00',
+              workdayEnd: '18:00',
+            ),
           ),
           visitQueryRepository: visits,
           now: () => DateTime(2026, 9, 14, 8),
@@ -138,7 +150,70 @@ void main() {
         expect(day.isWorkingDay, isFalse);
         expect(day.availableIntervals, isEmpty);
         expect(day.breakIntervals, isEmpty);
-        expect(visits.fetchCalls, 0);
+        expect(day.dayOffIntervals, hasLength(2));
+        expect(
+          day.dayOffIntervals[0].startsAt,
+          DateTime(2026, 9, 14, 9),
+        );
+        expect(
+          day.dayOffIntervals[0].endsAt,
+          DateTime(2026, 9, 14, 10),
+        );
+        expect(
+          day.dayOffIntervals[1].startsAt,
+          DateTime(2026, 9, 14, 10, 30),
+        );
+        expect(
+          day.dayOffIntervals[1].endsAt,
+          DateTime(2026, 9, 14, 18),
+        );
+        expect(visits.fetchCalls, 1);
+      });
+
+      test('splits a recurring Break around an override Visit', () async {
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(
+              workingDays: const [DateTime.monday],
+              workdayStart: '09:00',
+              workdayEnd: '18:00',
+              breakStart: '13:00',
+              breakEnd: '14:00',
+            ),
+          ),
+          visitQueryRepository: _FakeVisitQueryRepository([
+            Visit(
+              id: 'urgent-visit',
+              patientId: 'patient-1',
+              clinicId: 'clinic-1',
+              startsAt: DateTime(2026, 9, 14, 13, 15),
+              durationMinutes: 30,
+            ),
+          ]),
+          now: () => DateTime(2026, 9, 14, 8),
+        );
+
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 9, 14),
+        );
+
+        expect(day.breakIntervals, hasLength(2));
+        expect(
+          day.breakIntervals[0].startsAt,
+          DateTime(2026, 9, 14, 13),
+        );
+        expect(
+          day.breakIntervals[0].endsAt,
+          DateTime(2026, 9, 14, 13, 15),
+        );
+        expect(
+          day.breakIntervals[1].startsAt,
+          DateTime(2026, 9, 14, 13, 45),
+        );
+        expect(
+          day.breakIntervals[1].endsAt,
+          DateTime(2026, 9, 14, 14),
+        );
       });
 
       test('does not expose past free time for today', () async {

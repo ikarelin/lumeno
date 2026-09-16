@@ -10,6 +10,7 @@ import '../../../shared/widgets/sidebar/app_sidebar.dart';
 import '../../clinics/presentation/providers/clinic_provider.dart';
 import '../../patients/presentation/providers/patient_provider.dart';
 import '../../profile/presentation/providers/doctor_profile_provider.dart';
+import '../../scheduling/domain/availability_repository.dart';
 import '../domain/quick_create_context.dart';
 import '../domain/quick_create_intent.dart';
 import 'controllers/quick_create_controller.dart';
@@ -22,8 +23,9 @@ abstract final class QuickCreatePresenter {
 
   static Future<QuickCreateResult?> show(
     BuildContext context,
-    QuickCreateContext quickCreateContext,
-  ) async {
+    QuickCreateContext quickCreateContext, {
+    AvailabilityRepository? availabilityRepositoryOverride,
+  }) async {
     final container = ProviderScope.containerOf(context, listen: false);
 
     final patientRepository = container.read(
@@ -59,9 +61,9 @@ abstract final class QuickCreatePresenter {
       clinicRepository: clinicRepository,
       clinicMembershipRepository: clinicMembershipRepository,
       visitRepository: container.read(quickCreateVisitRepositoryProvider),
-      availabilityRepository: container.read(
-        quickCreateAvailabilityRepositoryProvider,
-      ),
+      availabilityRepository:
+          availabilityRepositoryOverride ??
+          container.read(quickCreateAvailabilityRepositoryProvider),
       defaultDurationMinutes: defaultDurationMinutes,
     );
 

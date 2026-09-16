@@ -14,6 +14,8 @@ import '../../quick_create/domain/quick_create_context.dart';
 import '../../quick_create/domain/quick_create_intent.dart';
 import '../../quick_create/domain/quick_create_source.dart';
 import '../../quick_create/presentation/quick_create_presenter.dart';
+import '../../scheduling/domain/availability_interval.dart';
+import '../../scheduling/presentation/providers/availability_provider.dart';
 import 'controllers/calendar_day_controller.dart';
 import 'views/calendar_day_view.dart';
 import 'widgets/calendar_summary.dart';
@@ -62,6 +64,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       selectedDate: _selectedDate,
                       isDesktop: isDesktop,
                       onAddVisit: _openNewVisit,
+                      onAddVisitAt: _openNewVisitAt,
+                      onOverrideAvailability: _openOverrideVisit,
                     )
                   else if (_view == _CalendarView.week)
                     _WeekView(
@@ -109,16 +113,41 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     });
   }
 
-  Future<void> _openNewVisit() async {
+  Future<void> _openNewVisit() {
+    return _openNewVisitAt(_selectedDate);
+  }
+
+  Future<void> _openNewVisitAt(DateTime startsAt) async {
     await QuickCreatePresenter.show(
       context,
       QuickCreateContext(
         intent: QuickCreateIntent.newVisit,
         source: QuickCreateSource.calendar,
-        startsAt: _selectedDate,
+        startsAt: startsAt,
       ),
     );
     ref.invalidate(calendarDayVisitsProvider(_selectedDate));
+    ref.invalidate(calendarDayAvailabilityProvider(_selectedDate));
+  }
+
+
+  Future<void> _openOverrideVisit(
+    AvailabilityInterval allowedInterval,
+  ) async {
+    final overrideRepository = ref.read(
+      visitOnlyAvailabilityRepositoryProvider(allowedInterval),
+    );
+
+    await QuickCreatePresenter.show(
+      context,
+      const QuickCreateContext(
+        intent: QuickCreateIntent.newVisit,
+        source: QuickCreateSource.calendar,
+      ),
+      availabilityRepositoryOverride: overrideRepository,
+    );
+    ref.invalidate(calendarDayVisitsProvider(_selectedDate));
+    ref.invalidate(calendarDayAvailabilityProvider(_selectedDate));
   }
 }
 

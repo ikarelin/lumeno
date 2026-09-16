@@ -8,6 +8,7 @@ import '../domain/availability_engine.dart';
 import '../domain/availability_interval.dart';
 import '../domain/availability_repository.dart';
 import '../domain/availability_slot.dart';
+import '../domain/availability_start_precision.dart';
 
 /// Production availability adapter for the current single-doctor MVP.
 ///
@@ -69,18 +70,6 @@ class ProfileVisitAvailabilityRepository
       );
     }
 
-    final workingInterval = _buildWorkingIntervalForDay(
-      profile: profile,
-      day: localDay,
-    );
-
-    if (workingInterval == null) {
-      return AvailabilityDay(
-        day: localDay,
-        isWorkingDay: false,
-      );
-    }
-
     final rangeEnd = DateTime(
       localDay.year,
       localDay.month,
@@ -90,25 +79,52 @@ class ProfileVisitAvailabilityRepository
       from: localDay,
       to: rangeEnd,
     );
+    final visitIntervals = _buildVisitIntervals(visits);
+    final now = _now().toLocal();
+    final defaultWorkdayInterval = _buildDefaultWorkdayIntervalForDay(
+      profile: profile,
+      day: localDay,
+    );
+    final isWorkingDay = profile.workingDays.contains(localDay.weekday);
+
+    if (!isWorkingDay) {
+      final dayOffIntervals = _engine.findFreeIntervals(
+        workingIntervals: [defaultWorkdayInterval],
+        busyIntervals: visitIntervals,
+        notBefore: now,
+      );
+
+      return AvailabilityDay(
+        day: localDay,
+        isWorkingDay: false,
+        dayOffIntervals: dayOffIntervals,
+      );
+    }
+
     final recurringBreak = _buildRecurringBreakIntervalForDay(
       profile: profile,
       day: localDay,
     );
-    final breakIntervals = recurringBreak == null
+    final clippedBreakIntervals = recurringBreak == null
         ? const <AvailabilityInterval>[]
         : _clipToWorkingInterval(
             interval: recurringBreak,
-            workingInterval: workingInterval,
+            workingInterval: defaultWorkdayInterval,
           );
+    final breakIntervals = _engine.findFreeIntervals(
+      workingIntervals: clippedBreakIntervals,
+      busyIntervals: visitIntervals,
+      notBefore: now,
+    );
 
     final busyIntervals = <AvailabilityInterval>[
-      ...breakIntervals,
-      ..._buildVisitIntervals(visits),
+      ...clippedBreakIntervals,
+      ...visitIntervals,
     ];
     final availableIntervals = _engine.findFreeIntervals(
-      workingIntervals: [workingInterval],
+      workingIntervals: [defaultWorkdayInterval],
       busyIntervals: busyIntervals,
-      notBefore: _now().toLocal(),
+      notBefore: now,
     );
 
     return AvailabilityDay(
@@ -178,7 +194,7 @@ class ProfileVisitAvailabilityRepository
     final starts = _engine.findSuggestedStarts(
       availableIntervals: availableIntervals,
       requestedDurationMinutes: durationMinutes,
-      startPrecisionMinutes: _startPrecisionMinutes(
+      startPrecisionMinutes: resolveAvailabilityStartPrecisionMinutes(
         defaultDurationMinutes: profile.defaultDurationMinutes,
         requestedDurationMinutes: durationMinutes,
       ),
@@ -228,6 +244,16 @@ class ProfileVisitAvailabilityRepository
       return null;
     }
 
+    return _buildDefaultWorkdayIntervalForDay(
+      profile: profile,
+      day: day,
+    );
+  }
+
+  AvailabilityInterval _buildDefaultWorkdayIntervalForDay({
+    required DoctorProfile profile,
+    required DateTime day,
+  }) {
     final workdayStart = _parseTime(
       profile.workdayStart,
       fieldName: 'workdayStart',
@@ -335,25 +361,6 @@ class ProfileVisitAvailabilityRepository
           ),
         )
         .toList(growable: false);
-  }
-
-  int _startPrecisionMinutes({
-    required int defaultDurationMinutes,
-    required int requestedDurationMinutes,
-  }) {
-    // The accepted product rule explicitly allows a deliberately selected
-    // 15-minute Visit to use 15-minute starts even when the normal practice
-    // cadence is coarser.
-    if (requestedDurationMinutes == 15) {
-      return 15;
-    }
-
-    return switch (defaultDurationMinutes) {
-      15 => 15,
-      30 => 30,
-      60 => 60,
-      _ => 30,
-    };
   }
 
   _ClockTime _parseTime(String value, {required String fieldName}) {
