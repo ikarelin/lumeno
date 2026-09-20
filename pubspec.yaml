@@ -51,6 +51,8 @@ dependencies:
   # Localization
   easy_localization: ^3.0.8
   intl: ^0.20.3
+  # IANA rules for doctor-local calendar dates (independent of device zone).
+  timezone: ^0.11.1
   # Supabase
   supabase_flutter: ^2.17.2
 

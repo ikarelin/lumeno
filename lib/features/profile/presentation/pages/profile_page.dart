@@ -14,6 +14,7 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_language_selector.dart';
 import '../../../auth/presentation/providers/auth_repository_provider.dart';
+import '../../../scheduling/domain/doctor_calendar_time.dart';
 import '../../domain/doctor_profile.dart';
 import '../providers/doctor_profile_provider.dart';
 import '../widgets/profile_clinics_card.dart';
@@ -137,6 +138,7 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
   String _workdayEnd = '18:00';
   String? _breakStart = '13:00';
   String? _breakEnd = '14:00';
+  String? _timeZoneId;
 
   bool _isSaving = false;
   bool _isLoggingOut = false;
@@ -254,6 +256,7 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
     _workdayEnd = profile?.workdayEnd ?? '18:00';
     _breakStart = profile?.breakStart ?? '13:00';
     _breakEnd = profile?.breakEnd ?? '14:00';
+    _timeZoneId = profile?.timeZoneId;
   }
 
   Widget _buildScheduleDefaults() {
@@ -280,6 +283,37 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
           const SizedBox(height: AppSpacing.sm),
           Text(
             'profile.scheduleDefaultsDescription'.tr(),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          OutlinedButton(
+            onPressed: _isBusy ? null : _selectTimeZone,
+            style: OutlinedButton.styleFrom(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'profile.timeZone'.tr(),
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(_timeZoneId ?? 'profile.timeZoneUnset'.tr()),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'profile.timeZoneDescription'.tr(),
             style: AppTextStyles.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -387,6 +421,63 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
         ],
       ),
     );
+  }
+
+  Future<void> _selectTimeZone() async {
+    final ids = DoctorCalendarTime.availableTimeZoneIds;
+    var search = '';
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, updateSearch) {
+          final matches = ids
+              .where((id) => id.toLowerCase().contains(search.toLowerCase()))
+              .toList();
+          return AlertDialog(
+            title: Text('profile.timeZone'.tr()),
+            content: SizedBox(
+              width: 420,
+              height: MediaQuery.sizeOf(dialogContext).height * 0.5,
+              child: Column(
+                children: [
+                  TextField(
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: 'profile.timeZoneSearch'.tr(),
+                      prefixIcon: const Icon(Icons.search_rounded),
+                    ),
+                    onChanged: (value) => updateSearch(() => search = value),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: matches.length,
+                      itemBuilder: (context, index) {
+                        final id = matches[index];
+                        return ListTile(
+                          title: Text(id),
+                          selected: id == _timeZoneId,
+                          onTap: () => Navigator.of(dialogContext).pop(id),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text('profile.cancel'.tr()),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (selected != null && mounted) {
+      setState(() => _timeZoneId = selected);
+    }
   }
 
   Widget _timeButton({
@@ -671,7 +762,7 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
       await repository.saveCurrentProfile(
         fullName: _nameController.text,
         specialty: _specialtyController.text,
-        timeZoneId: widget.profile?.timeZoneId,
+        timeZoneId: _timeZoneId,
         defaultDurationMinutes: _defaultDurationMinutes,
         workingDays: _workingDays,
         workdayStart: _workdayStart,
