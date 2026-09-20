@@ -671,6 +671,7 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
       await repository.saveCurrentProfile(
         fullName: _nameController.text,
         specialty: _specialtyController.text,
+        timeZoneId: widget.profile?.timeZoneId,
         defaultDurationMinutes: _defaultDurationMinutes,
         workingDays: _workingDays,
         workdayStart: _workdayStart,

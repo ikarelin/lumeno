@@ -623,6 +623,7 @@ class _FakeProfileRepository implements DoctorProfileRepository {
   Future<DoctorProfile> saveCurrentProfile({
     required String fullName,
     required String specialty,
+    required String? timeZoneId,
     required int defaultDurationMinutes,
     required List<int> workingDays,
     required String workdayStart,

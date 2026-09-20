@@ -24,18 +24,33 @@ class SupabaseDoctorProfileRepository implements DoctorProfileRepository {
           .from('doctor_profiles')
           .select(
             'user_id, full_name, specialty, default_duration_minutes, '
-            'working_days, workday_start, workday_end, break_start, break_end',
+            'working_days, workday_start, workday_end, break_start, break_end, '
+            'time_zone_id',
           )
           .eq('user_id', user.id)
           .maybeSingle();
-    } on PostgrestException {
-      // Keep existing accounts readable until the scheduling migration is
-      // applied to the connected Supabase project.
-      row = await _client
-          .from('doctor_profiles')
-          .select('user_id, full_name, specialty')
-          .eq('user_id', user.id)
-          .maybeSingle();
+    } on PostgrestException catch (error) {
+      if (error.code != '42703') rethrow;
+      // Transitional read for deployments that have not applied TIMEZONE-01A.
+      // Keep existing schedule defaults when only the timezone column is absent.
+      try {
+        row = await _client
+            .from('doctor_profiles')
+            .select(
+              'user_id, full_name, specialty, default_duration_minutes, '
+              'working_days, workday_start, workday_end, break_start, break_end',
+            )
+            .eq('user_id', user.id)
+            .maybeSingle();
+      } on PostgrestException catch (error) {
+        if (error.code != '42703') rethrow;
+        // Existing compatibility path for accounts before scheduling migrations.
+        row = await _client
+            .from('doctor_profiles')
+            .select('user_id, full_name, specialty')
+            .eq('user_id', user.id)
+            .maybeSingle();
+      }
     }
 
     if (row == null) {
@@ -61,6 +76,7 @@ class SupabaseDoctorProfileRepository implements DoctorProfileRepository {
   Future<DoctorProfile> saveCurrentProfile({
     required String fullName,
     required String specialty,
+    required String? timeZoneId,
     required int defaultDurationMinutes,
     required List<int> workingDays,
     required String workdayStart,
@@ -82,6 +98,7 @@ class SupabaseDoctorProfileRepository implements DoctorProfileRepository {
           'user_id': user.id,
           'full_name': fullName.trim(),
           'specialty': specialty.trim(),
+          'time_zone_id': timeZoneId,
           'default_duration_minutes': defaultDurationMinutes,
           'working_days': workingDays,
           'workday_start': workdayStart,
@@ -91,7 +108,8 @@ class SupabaseDoctorProfileRepository implements DoctorProfileRepository {
         }, onConflict: 'user_id')
         .select(
           'user_id, full_name, specialty, default_duration_minutes, '
-          'working_days, workday_start, workday_end, break_start, break_end',
+          'working_days, workday_start, workday_end, break_start, break_end, '
+          'time_zone_id',
         )
         .single();
 
@@ -103,6 +121,7 @@ class SupabaseDoctorProfileRepository implements DoctorProfileRepository {
       userId: row['user_id'] as String,
       fullName: row['full_name'] as String,
       specialty: row['specialty'] as String,
+      timeZoneId: row['time_zone_id'] as String?,
       defaultDurationMinutes:
           (row['default_duration_minutes'] as num?)?.toInt() ?? 30,
       workingDays: _readWorkingDays(row['working_days']),
