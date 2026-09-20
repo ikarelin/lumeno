@@ -11,19 +11,9 @@ import 'availability_interval.dart';
 class AvailabilityEngine {
   const AvailabilityEngine();
 
-  /// Returns every continuous free interval after subtracting busy time.
-  ///
-  /// This is the canonical interval-subtraction operation. It deliberately has
-  /// no appointment-duration filter so Calendar can render real free windows
-  /// rather than reconstructing availability in presentation code.
-  ///
-  /// [workingIntervals] defines when work is allowed. [busyIntervals] contains
-  /// already unavailable time such as scheduled Visits and recurring breaks.
-  /// [notBefore] removes past availability while preserving historical Visits
-  /// elsewhere in the UI.
-  ///
-  /// The method performs no fixed 24-hour/day arithmetic. Concrete day and
-  /// timezone boundaries must be resolved before calling the engine.
+  /// Returns every continuous free interval, including fragments shorter than
+  /// a requested appointment duration. Used to render the Calendar timeline.
+  /// Absolute interval comparisons work for UTC and local DateTime instances.
   List<AvailabilityInterval> findFreeIntervals({
     required List<AvailabilityInterval> workingIntervals,
     required List<AvailabilityInterval> busyIntervals,
@@ -45,51 +35,60 @@ class AvailabilityEngine {
         if (!workingEnd.isAfter(notBefore)) {
           continue;
         }
-
         if (workingStart.isBefore(notBefore)) {
           workingStart = notBefore;
         }
       }
 
-      var cursor = workingStart;
+      if (!workingStart.isBefore(workingEnd)) {
+        continue;
+      }
 
+      var cursor = workingStart;
       for (final busyInterval in busy) {
         if (!busyInterval.endsAt.isAfter(cursor)) {
           continue;
         }
-
         if (!busyInterval.startsAt.isBefore(workingEnd)) {
           break;
         }
 
         final gapEnd = _earlierOf(busyInterval.startsAt, workingEnd);
-        _addIfPositive(
+        _addIfFits(
           result,
           startsAt: cursor,
           endsAt: gapEnd,
+          requestedDuration: Duration.zero,
         );
 
         if (busyInterval.endsAt.isAfter(cursor)) {
           cursor = _laterOf(cursor, busyInterval.endsAt);
         }
-
         if (!cursor.isBefore(workingEnd)) {
           break;
         }
       }
 
-      _addIfPositive(
+      _addIfFits(
         result,
         startsAt: cursor,
         endsAt: workingEnd,
+        requestedDuration: Duration.zero,
       );
     }
 
     return List.unmodifiable(result);
   }
 
-  /// Returns only continuous free intervals that can fit the requested
-  /// appointment duration.
+  /// Returns continuous free intervals that can fit the requested duration.
+  ///
+  /// [workingIntervals] defines when work is allowed. [busyIntervals] contains
+  /// already unavailable time such as scheduled Visits and recurring breaks.
+  /// [notBefore] is normally the current instant for booking flows; it removes
+  /// past availability while preserving historical Visits elsewhere in the UI.
+  ///
+  /// The method performs no fixed 24-hour/day arithmetic. Concrete day and
+  /// timezone boundaries must be resolved before calling the engine.
   List<AvailabilityInterval> findAvailableIntervals({
     required List<AvailabilityInterval> workingIntervals,
     required List<AvailabilityInterval> busyIntervals,
@@ -104,29 +103,84 @@ class AvailabilityEngine {
       );
     }
 
-    final requestedDuration = Duration(minutes: requestedDurationMinutes);
-    final freeIntervals = findFreeIntervals(
-      workingIntervals: workingIntervals,
-      busyIntervals: busyIntervals,
-      notBefore: notBefore,
-    );
+    if (workingIntervals.isEmpty) {
+      return const [];
+    }
 
-    return List.unmodifiable(
-      freeIntervals.where(
-        (interval) => interval.duration >= requestedDuration,
-      ),
-    );
+    final requestedDuration = Duration(minutes: requestedDurationMinutes);
+    final working = _mergeIntervals(workingIntervals);
+    final busy = _mergeIntervals(busyIntervals);
+    final result = <AvailabilityInterval>[];
+
+    for (final sourceWorkingInterval in working) {
+      var workingStart = sourceWorkingInterval.startsAt;
+      final workingEnd = sourceWorkingInterval.endsAt;
+
+      if (notBefore != null) {
+        if (!workingEnd.isAfter(notBefore)) {
+          continue;
+        }
+
+        if (workingStart.isBefore(notBefore)) {
+          workingStart = notBefore;
+        }
+      }
+
+      if (workingEnd.difference(workingStart) < requestedDuration) {
+        continue;
+      }
+
+      var cursor = workingStart;
+
+      for (final busyInterval in busy) {
+        if (!busyInterval.endsAt.isAfter(cursor)) {
+          continue;
+        }
+
+        if (!busyInterval.startsAt.isBefore(workingEnd)) {
+          break;
+        }
+
+        final gapEnd = _earlierOf(busyInterval.startsAt, workingEnd);
+        _addIfFits(
+          result,
+          startsAt: cursor,
+          endsAt: gapEnd,
+          requestedDuration: requestedDuration,
+        );
+
+        if (busyInterval.endsAt.isAfter(cursor)) {
+          cursor = _laterOf(cursor, busyInterval.endsAt);
+        }
+
+        if (!cursor.isBefore(workingEnd)) {
+          break;
+        }
+      }
+
+      _addIfFits(
+        result,
+        startsAt: cursor,
+        endsAt: workingEnd,
+        requestedDuration: requestedDuration,
+      );
+    }
+
+    return List.unmodifiable(result);
   }
 
   /// Derives concrete booking starts inside already-fitted free intervals.
   ///
   /// Suggested starts are transient choices. They are not stored availability
   /// records and selecting one remains an explicit UI action.
+  /// [roundUpStart] optionally aligns the next instant to the doctor's
+  /// civil clock; the default retains the existing device/UTC behavior.
   List<DateTime> findSuggestedStarts({
     required List<AvailabilityInterval> availableIntervals,
     required int requestedDurationMinutes,
     required int startPrecisionMinutes,
     int limit = 4,
+    DateTime Function(DateTime instant, int precisionMinutes)? roundUpStart,
   }) {
     if (requestedDurationMinutes <= 0) {
       throw ArgumentError.value(
@@ -154,7 +208,7 @@ class AvailabilityEngine {
     final starts = <DateTime>[];
 
     for (final interval in intervals) {
-      var candidate = _roundUpToPrecision(
+      var candidate = (roundUpStart ?? _roundUpToPrecision)(
         interval.startsAt,
         startPrecisionMinutes,
       );
@@ -166,7 +220,16 @@ class AvailabilityEngine {
           return List.unmodifiable(starts);
         }
 
-        candidate = candidate.add(Duration(minutes: startPrecisionMinutes));
+        final previous = candidate;
+        candidate = roundUpStart == null
+            ? candidate.add(Duration(minutes: startPrecisionMinutes))
+            : roundUpStart(
+                candidate.add(const Duration(microseconds: 1)),
+                startPrecisionMinutes,
+              );
+        if (!candidate.isAfter(previous)) {
+          throw StateError('Start alignment must advance time.');
+        }
       }
     }
 
@@ -207,12 +270,17 @@ class AvailabilityEngine {
     return merged;
   }
 
-  void _addIfPositive(
+  void _addIfFits(
     List<AvailabilityInterval> target, {
     required DateTime startsAt,
     required DateTime endsAt,
+    required Duration requestedDuration,
   }) {
     if (!startsAt.isBefore(endsAt)) {
+      return;
+    }
+
+    if (endsAt.difference(startsAt) < requestedDuration) {
       return;
     }
 

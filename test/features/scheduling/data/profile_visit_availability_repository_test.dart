@@ -571,6 +571,172 @@ void main() {
       expect(visits.lastTo, DateTime(2026, 9, 17));
     });
 
+    group('doctor IANA zone (opt-in)', () {
+      test('keeps legacy callers unchanged until the presentation switches', () async {
+        final visits = _FakeVisitQueryRepository(const []);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(timeZoneId: 'Europe/Moscow',
+              workingDays: const [DateTime.monday],
+              breakStart: null, breakEnd: null),
+          ),
+          visitQueryRepository: visits,
+          now: () => DateTime(2026, 9, 14, 8),
+        );
+
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 9, 14),
+        );
+        expect(day.availableIntervals.single.startsAt, DateTime(2026, 9, 14, 9));
+        expect(visits.lastFrom, DateTime(2026, 9, 14));
+      });
+
+      test('requires an explicitly configured IANA zone when enabled', () async {
+        final visits = _FakeVisitQueryRepository(const []);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(_profile(timeZoneId: null)),
+          visitQueryRepository: visits,
+          useDoctorTimeZone: true,
+        );
+
+        await expectLater(
+          repository.findDayAvailability(day: DateTime(2026, 9, 14)),
+          throwsStateError,
+        );
+        expect(visits.fetchCalls, 0);
+      });
+
+      test('Moscow day queries UTC boundaries and subtracts a UTC Visit', () async {
+        final visits = _FakeVisitQueryRepository([
+          Visit(
+            id: 'visit-utc', patientId: 'patient-1', clinicId: 'clinic-1',
+            startsAt: DateTime.utc(2026, 9, 14, 7), durationMinutes: 30,
+          ),
+        ]);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(timeZoneId: 'Europe/Moscow',
+              workingDays: const [DateTime.monday],
+              breakStart: null, breakEnd: null),
+          ),
+          visitQueryRepository: visits,
+          now: () => DateTime.utc(2026, 9, 14, 4),
+          useDoctorTimeZone: true,
+        );
+
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 9, 14),
+        );
+        expect(day.day, DateTime(2026, 9, 14));
+        expect(visits.lastFrom, DateTime.utc(2026, 9, 13, 21));
+        expect(visits.lastTo, DateTime.utc(2026, 9, 14, 21));
+        expect(day.availableIntervals, hasLength(2));
+        expect(day.availableIntervals.first.startsAt, DateTime.utc(2026, 9, 14, 6));
+        expect(day.availableIntervals.first.endsAt, DateTime.utc(2026, 9, 14, 7));
+        expect(day.availableIntervals.last.startsAt, DateTime.utc(2026, 9, 14, 7, 30));
+        expect(day.availableIntervals.last.endsAt, DateTime.utc(2026, 9, 14, 15));
+        expect(day.availableIntervals.every((interval) => interval.startsAt.isUtc), isTrue);
+      });
+
+      test('range queries preserve date exceptions but fetch UTC instants', () async {
+        final visits = _FakeVisitQueryRepository(const []);
+        final exceptions = _FakeScheduleDayExceptionRepository([
+          ScheduleDayException(day: DateTime(2026, 9, 15), isWorkingDay: false),
+        ]);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(timeZoneId: 'Europe/Moscow',
+              workingDays: const [DateTime.monday, DateTime.tuesday]),
+          ),
+          visitQueryRepository: visits,
+          scheduleDayExceptionRepository: exceptions,
+          now: () => DateTime.utc(2026, 9, 13, 5),
+          useDoctorTimeZone: true,
+        );
+
+        final days = await repository.findRangeAvailability(
+          from: DateTime(2026, 9, 14), to: DateTime(2026, 9, 16),
+        );
+        expect(days.map((day) => day.isWorkingDay), [true, false]);
+        expect(visits.fetchCalls, 1);
+        expect(visits.lastFrom, DateTime.utc(2026, 9, 13, 21));
+        expect(visits.lastTo, DateTime.utc(2026, 9, 15, 21));
+        expect(exceptions.lastRangeFrom, DateTime(2026, 9, 14));
+        expect(exceptions.lastRangeTo, DateTime(2026, 9, 16));
+        expect(days.first.availableIntervals.first.startsAt, DateTime.utc(2026, 9, 14, 6));
+      });
+
+      test('Amsterdam spring-forward day is 23 hours with real work clock', () async {
+        final visits = _FakeVisitQueryRepository(const []);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(timeZoneId: 'Europe/Amsterdam',
+              workingDays: const [DateTime.sunday],
+              workdayStart: '00:00', workdayEnd: '04:00',
+              breakStart: null, breakEnd: null),
+          ),
+          visitQueryRepository: visits,
+          now: () => DateTime.utc(2026, 3, 28, 21),
+          useDoctorTimeZone: true,
+        );
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 3, 29),
+        );
+        expect(visits.lastFrom, DateTime.utc(2026, 3, 28, 23));
+        expect(visits.lastTo, DateTime.utc(2026, 3, 29, 22));
+        expect(day.availableIntervals.single.startsAt, DateTime.utc(2026, 3, 28, 23));
+        expect(day.availableIntervals.single.endsAt, DateTime.utc(2026, 3, 29, 2));
+        expect(day.availableIntervals.single.duration, const Duration(hours: 3));
+      });
+
+      test('Amsterdam fall-back day is 25 hours with real work clock', () async {
+        final visits = _FakeVisitQueryRepository(const []);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(timeZoneId: 'Europe/Amsterdam',
+              workingDays: const [DateTime.sunday],
+              workdayStart: '00:00', workdayEnd: '04:00',
+              breakStart: null, breakEnd: null),
+          ),
+          visitQueryRepository: visits,
+          now: () => DateTime.utc(2026, 10, 24, 21),
+          useDoctorTimeZone: true,
+        );
+        final day = await repository.findDayAvailability(
+          day: DateTime(2026, 10, 25),
+        );
+        expect(visits.lastFrom, DateTime.utc(2026, 10, 24, 22));
+        expect(visits.lastTo, DateTime.utc(2026, 10, 25, 23));
+        expect(day.availableIntervals.single.startsAt, DateTime.utc(2026, 10, 24, 22));
+        expect(day.availableIntervals.single.endsAt, DateTime.utc(2026, 10, 25, 3));
+        expect(day.availableIntervals.single.duration, const Duration(hours: 5));
+      });
+
+      test('Nepal +05:45 aligns suggestion precision to doctor clock', () async {
+        final visits = _FakeVisitQueryRepository(const []);
+        final repository = ProfileVisitAvailabilityRepository(
+          profileRepository: _FakeProfileRepository(
+            _profile(timeZoneId: 'Asia/Kathmandu',
+              workingDays: const [DateTime.monday],
+              breakStart: null, breakEnd: null),
+          ),
+          visitQueryRepository: visits,
+          now: () => DateTime.utc(2026, 9, 14, 2),
+          useDoctorTimeZone: true,
+        );
+        final slots = await repository.findAvailableSlots(
+          from: DateTime.utc(2026, 9, 14, 2),
+          durationMinutes: 30, limit: 2,
+        );
+        expect(slots.map((slot) => slot.startsAt), [
+          DateTime.utc(2026, 9, 14, 3, 15),
+          DateTime.utc(2026, 9, 14, 3, 45),
+        ]);
+        expect(visits.lastFrom, DateTime.utc(2026, 9, 13, 18, 15));
+        expect(visits.lastTo, DateTime.utc(2026, 10, 13, 18, 15));
+      });
+    });
+
     test('returns no slots when current Doctor Profile is unavailable', () async {
       final visits = _FakeVisitQueryRepository(const []);
       final repository = ProfileVisitAvailabilityRepository(
@@ -597,11 +763,13 @@ DoctorProfile _profile({
   String workdayEnd = '18:00',
   String? breakStart = '13:00',
   String? breakEnd = '14:00',
+  String? timeZoneId,
 }) {
   return DoctorProfile(
     userId: 'doctor-1',
     fullName: 'Dr Test',
     specialty: 'Dentist',
+    timeZoneId: timeZoneId,
     defaultDurationMinutes: defaultDurationMinutes,
     workingDays: workingDays,
     workdayStart: workdayStart,

@@ -3,6 +3,7 @@ import '../../profile/domain/doctor_profile_repository.dart';
 import '../../visits/domain/visit.dart';
 import '../../visits/domain/visit_repository.dart';
 import '../domain/availability_day.dart';
+import '../domain/doctor_calendar_time.dart';
 import '../domain/availability_day_repository.dart';
 import '../domain/availability_engine.dart';
 import '../domain/availability_interval.dart';
@@ -32,6 +33,9 @@ class ProfileVisitAvailabilityRepository
     int searchHorizonDays = 30,
     String? excludedVisitId,
     ScheduleDayExceptionRepository? scheduleDayExceptionRepository,
+    // Keep the production callers on their existing contract until Calendar,
+    // Quick Create and Dashboard switch to doctor-zone presentation together.
+    bool useDoctorTimeZone = false,
   }) {
     if (searchHorizonDays <= 0) {
       throw ArgumentError.value(
@@ -53,6 +57,7 @@ class ProfileVisitAvailabilityRepository
           ? null
           : normalizedExcludedVisitId,
       scheduleDayExceptionRepository,
+      useDoctorTimeZone,
     );
   }
 
@@ -64,6 +69,7 @@ class ProfileVisitAvailabilityRepository
     this._searchHorizonDays,
     this._excludedVisitId,
     this._scheduleDayExceptionRepository,
+    this._useDoctorTimeZone,
   );
 
   final DoctorProfileRepository _profileRepository;
@@ -73,13 +79,33 @@ class ProfileVisitAvailabilityRepository
   final int _searchHorizonDays;
   final String? _excludedVisitId;
   final ScheduleDayExceptionRepository? _scheduleDayExceptionRepository;
+  final bool _useDoctorTimeZone;
+
+  DoctorCalendarTime? _calendarTime(DoctorProfile profile) {
+    if (!_useDoctorTimeZone) return null;
+    final zoneId = profile.timeZoneId;
+    if (zoneId == null || zoneId.trim().isEmpty) {
+      throw StateError('Doctor IANA time zone must be configured.');
+    }
+    return DoctorCalendarTime(zoneId);
+  }
+
+  // The repository Day and Range arguments are civil-date labels, not instants.
+  // Preserve Y/M/D without converting them through the device time zone.
+  DateTime _dayLabel(DateTime day) => DateTime(day.year, day.month, day.day);
+
+  DateTime _doctorDayAt(DoctorCalendarTime calendarTime, DateTime instant) {
+    final label = calendarTime.civilDayAt(instant);
+    return _dayLabel(label);
+  }
 
   @override
   Future<AvailabilityDay> findDayAvailability({
     required DateTime day,
   }) async {
-    final localDay = _localDay(day);
     final profile = await _profileRepository.fetchCurrentProfile();
+    final calendarTime = profile == null ? null : _calendarTime(profile);
+    final localDay = calendarTime == null ? _localDay(day) : _dayLabel(day);
 
     if (profile == null) {
       return AvailabilityDay(
@@ -96,9 +122,13 @@ class ProfileVisitAvailabilityRepository
     final exception = await _scheduleDayExceptionRepository?.fetchForDay(
       day: localDay,
     );
+    final queryRange = calendarTime?.civilRangeUtc(
+      firstCivilDay: localDay,
+      endExclusiveCivilDay: rangeEnd,
+    );
     final visits = await _visitQueryRepository.fetchVisits(
-      from: localDay,
-      to: rangeEnd,
+      from: queryRange?.startUtc ?? localDay,
+      to: queryRange?.endUtc ?? rangeEnd,
     );
 
     return _buildAvailabilityDay(
@@ -106,8 +136,9 @@ class ProfileVisitAvailabilityRepository
       day: localDay,
       isWorkingDay:
           exception?.isWorkingDay ?? profile.workingDays.contains(localDay.weekday),
-      visitIntervals: _buildVisitIntervals(visits),
-      now: _now().toLocal(),
+      visitIntervals: _buildVisitIntervals(visits, calendarTime: calendarTime),
+      now: calendarTime == null ? _now().toLocal() : _now().toUtc(),
+      calendarTime: calendarTime,
     );
   }
 
@@ -116,8 +147,9 @@ class ProfileVisitAvailabilityRepository
     required DateTime from,
     required DateTime to,
   }) async {
-    final firstDay = _localDay(from);
-    final rangeEnd = _localDay(to);
+    // from / to are calendar-date labels, never real instants.
+    final firstDay = _useDoctorTimeZone ? _dayLabel(from) : _localDay(from);
+    final rangeEnd = _useDoctorTimeZone ? _dayLabel(to) : _localDay(to);
 
     if (!firstDay.isBefore(rangeEnd)) {
       return const [];
@@ -144,9 +176,14 @@ class ProfileVisitAvailabilityRepository
       );
     }
 
+    final calendarTime = _calendarTime(profile);
+    final queryRange = calendarTime?.civilRangeUtc(
+      firstCivilDay: firstDay,
+      endExclusiveCivilDay: rangeEnd,
+    );
     final visitsFuture = _visitQueryRepository.fetchVisits(
-      from: firstDay,
-      to: rangeEnd,
+      from: queryRange?.startUtc ?? firstDay,
+      to: queryRange?.endUtc ?? rangeEnd,
     );
     final exceptionsFuture = _scheduleDayExceptionRepository?.fetchForRange(
           from: firstDay,
@@ -157,8 +194,10 @@ class ProfileVisitAvailabilityRepository
     final visits = await visitsFuture;
     final exceptions = await exceptionsFuture;
     final workingOverrides = _workingOverrides(exceptions);
-    final visitIntervals = _buildVisitIntervals(visits);
-    final now = _now().toLocal();
+    final visitIntervals = _buildVisitIntervals(
+      visits, calendarTime: calendarTime,
+    );
+    final now = calendarTime == null ? _now().toLocal() : _now().toUtc();
 
     return List.unmodifiable(
       days.map(
@@ -172,6 +211,7 @@ class ProfileVisitAvailabilityRepository
           ),
           visitIntervals: visitIntervals,
           now: now,
+          calendarTime: calendarTime,
         ),
       ),
     );
@@ -183,10 +223,12 @@ class ProfileVisitAvailabilityRepository
     required bool isWorkingDay,
     required List<AvailabilityInterval> visitIntervals,
     required DateTime now,
+    required DoctorCalendarTime? calendarTime,
   }) {
     final defaultWorkdayInterval = _buildDefaultWorkdayIntervalForDay(
       profile: profile,
       day: day,
+      calendarTime: calendarTime,
     );
 
     if (!isWorkingDay) {
@@ -207,6 +249,7 @@ class ProfileVisitAvailabilityRepository
       profile: profile,
       day: day,
       isWorkingDay: true,
+      calendarTime: calendarTime,
     );
     final clippedBreakIntervals = recurringBreak == null
         ? const <AvailabilityInterval>[]
@@ -261,17 +304,24 @@ class ProfileVisitAvailabilityRepository
       return const [];
     }
 
-    final effectiveFrom = _laterOf(from, _now()).toLocal();
-    final firstDay = _localDay(effectiveFrom);
+    final calendarTime = _calendarTime(profile);
+    final effectiveFrom = _laterOf(from, _now());
+    final firstDay = calendarTime == null
+        ? _localDay(effectiveFrom)
+        : _doctorDayAt(calendarTime, effectiveFrom);
     final rangeEnd = DateTime(
       firstDay.year,
       firstDay.month,
       firstDay.day + _searchHorizonDays,
     );
 
+    final queryRange = calendarTime?.civilRangeUtc(
+      firstCivilDay: firstDay,
+      endExclusiveCivilDay: rangeEnd,
+    );
     final visits = await _visitQueryRepository.fetchVisits(
-      from: firstDay,
-      to: rangeEnd,
+      from: queryRange?.startUtc ?? firstDay,
+      to: queryRange?.endUtc ?? rangeEnd,
     );
     final exceptions = await _scheduleDayExceptionRepository?.fetchForRange(
           from: firstDay,
@@ -284,21 +334,25 @@ class ProfileVisitAvailabilityRepository
       profile: profile,
       firstDay: firstDay,
       workingOverrides: workingOverrides,
+      calendarTime: calendarTime,
     );
     final busyIntervals = <AvailabilityInterval>[
       ..._buildRecurringBreakIntervals(
         profile: profile,
         firstDay: firstDay,
         workingOverrides: workingOverrides,
+        calendarTime: calendarTime,
       ),
-      ..._buildVisitIntervals(visits),
+      ..._buildVisitIntervals(visits, calendarTime: calendarTime),
     ];
 
     final availableIntervals = _engine.findAvailableIntervals(
       workingIntervals: workingIntervals,
       busyIntervals: busyIntervals,
       requestedDurationMinutes: durationMinutes,
-      notBefore: effectiveFrom,
+      notBefore: calendarTime == null
+          ? effectiveFrom.toLocal()
+          : effectiveFrom.toUtc(),
     );
 
     final starts = _engine.findSuggestedStarts(
@@ -309,6 +363,11 @@ class ProfileVisitAvailabilityRepository
         requestedDurationMinutes: durationMinutes,
       ),
       limit: limit,
+      roundUpStart: calendarTime == null
+          ? null
+          : (instant, precision) => _roundUpDoctorStart(
+                calendarTime, instant, precision,
+              ),
     );
 
     return List.unmodifiable(
@@ -325,6 +384,7 @@ class ProfileVisitAvailabilityRepository
     required DoctorProfile profile,
     required DateTime firstDay,
     required Map<String, bool> workingOverrides,
+    required DoctorCalendarTime? calendarTime,
   }) {
     final intervals = <AvailabilityInterval>[];
 
@@ -338,6 +398,7 @@ class ProfileVisitAvailabilityRepository
         profile: profile,
         day: day,
         workingOverrides: workingOverrides,
+        calendarTime: calendarTime,
       );
 
       if (interval != null) {
@@ -352,6 +413,7 @@ class ProfileVisitAvailabilityRepository
     required DoctorProfile profile,
     required DateTime day,
     required Map<String, bool> workingOverrides,
+    required DoctorCalendarTime? calendarTime,
   }) {
     if (!_isWorkingDay(
       profile: profile,
@@ -364,12 +426,14 @@ class ProfileVisitAvailabilityRepository
     return _buildDefaultWorkdayIntervalForDay(
       profile: profile,
       day: day,
+      calendarTime: calendarTime,
     );
   }
 
   AvailabilityInterval _buildDefaultWorkdayIntervalForDay({
     required DoctorProfile profile,
     required DateTime day,
+    required DoctorCalendarTime? calendarTime,
   }) {
     final workdayStart = _parseTime(
       profile.workdayStart,
@@ -379,8 +443,8 @@ class ProfileVisitAvailabilityRepository
       profile.workdayEnd,
       fieldName: 'workdayEnd',
     );
-    final startsAt = _atTime(day, workdayStart);
-    final endsAt = _atTime(day, workdayEnd);
+    final startsAt = _atTime(day, workdayStart, calendarTime);
+    final endsAt = _atTime(day, workdayEnd, calendarTime);
 
     if (!startsAt.isBefore(endsAt)) {
       throw StateError('Doctor workday start must be before workday end.');
@@ -393,6 +457,7 @@ class ProfileVisitAvailabilityRepository
     required DoctorProfile profile,
     required DateTime firstDay,
     required Map<String, bool> workingOverrides,
+    required DoctorCalendarTime? calendarTime,
   }) {
     final intervals = <AvailabilityInterval>[];
 
@@ -410,6 +475,7 @@ class ProfileVisitAvailabilityRepository
           day: day,
           workingOverrides: workingOverrides,
         ),
+        calendarTime: calendarTime,
       );
 
       if (interval != null) {
@@ -424,6 +490,7 @@ class ProfileVisitAvailabilityRepository
     required DoctorProfile profile,
     required DateTime day,
     required bool isWorkingDay,
+    required DoctorCalendarTime? calendarTime,
   }) {
     if (!isWorkingDay) {
       return null;
@@ -444,8 +511,8 @@ class ProfileVisitAvailabilityRepository
       breakEndValue,
       fieldName: 'breakEnd',
     );
-    final startsAt = _atTime(day, breakStart);
-    final endsAt = _atTime(day, breakEnd);
+    final startsAt = _atTime(day, breakStart, calendarTime);
+    final endsAt = _atTime(day, breakEnd, calendarTime);
 
     if (!startsAt.isBefore(endsAt)) {
       throw StateError('Doctor break start must be before break end.');
@@ -500,7 +567,10 @@ class ProfileVisitAvailabilityRepository
     return '$year-$month-$day';
   }
 
-  List<AvailabilityInterval> _buildVisitIntervals(List<Visit> visits) {
+  List<AvailabilityInterval> _buildVisitIntervals(
+    List<Visit> visits, {
+    required DoctorCalendarTime? calendarTime,
+  }) {
     return visits
         .where(
           (visit) =>
@@ -510,8 +580,12 @@ class ProfileVisitAvailabilityRepository
         .where((visit) => visit.startsAt.isBefore(visit.endsAt))
         .map(
           (visit) => AvailabilityInterval(
-            startsAt: visit.startsAt.toLocal(),
-            endsAt: visit.endsAt.toLocal(),
+            startsAt: calendarTime == null
+                ? visit.startsAt.toLocal()
+                : visit.startsAt.toUtc(),
+            endsAt: calendarTime == null
+                ? visit.endsAt.toLocal()
+                : visit.endsAt.toUtc(),
           ),
         )
         .toList(growable: false);
@@ -545,7 +619,14 @@ class ProfileVisitAvailabilityRepository
     return _ClockTime(hour: hour, minute: minute, second: second);
   }
 
-  DateTime _atTime(DateTime day, _ClockTime time) {
+  DateTime _atTime(
+    DateTime day, _ClockTime time, DoctorCalendarTime? calendarTime,
+  ) {
+    if (calendarTime != null) {
+      return calendarTime.instantAtCivilTimeUtc(
+        day, hour: time.hour, minute: time.minute, second: time.second,
+      );
+    }
     return DateTime(
       day.year,
       day.month,
@@ -559,6 +640,29 @@ class ProfileVisitAvailabilityRepository
   DateTime _localDay(DateTime value) {
     final local = value.toLocal();
     return DateTime(local.year, local.month, local.day);
+  }
+
+  // Align starts to the doctor's clock rather than UTC's minute-of-day.
+  // A +05:45 zone must offer 09:00 and 09:30, not 09:15 and 09:45.
+  DateTime _roundUpDoctorStart(
+    DoctorCalendarTime calendarTime, DateTime instant, int precisionMinutes,
+  ) {
+    var candidate = instant.toUtc();
+    if (candidate.second != 0 ||
+        candidate.millisecond != 0 || candidate.microsecond != 0) {
+      candidate = DateTime.utc(
+        candidate.year, candidate.month, candidate.day,
+        candidate.hour, candidate.minute + 1,
+      );
+    }
+    for (var minute = 0; minute < 3 * 24 * 60; minute++) {
+      final clock = calendarTime.timeAt(candidate);
+      if ((clock.hour * 60 + clock.minute) % precisionMinutes == 0) {
+        return candidate;
+      }
+      candidate = candidate.add(const Duration(minutes: 1));
+    }
+    throw StateError('Could not align doctor-local visit start.');
   }
 
   DateTime _laterOf(DateTime first, DateTime second) {
