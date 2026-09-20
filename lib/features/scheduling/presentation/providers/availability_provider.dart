@@ -12,6 +12,7 @@ import '../../domain/availability_interval.dart';
 import '../../domain/availability_repository.dart';
 import '../../domain/availability_range_repository.dart';
 import '../../domain/schedule_day_exception_repository.dart';
+import 'doctor_time_mode.dart';
 
 final scheduleDayExceptionRepositoryProvider =
     Provider<ScheduleDayExceptionRepository>((ref) {
@@ -37,6 +38,7 @@ final profileVisitAvailabilityRepositoryProvider =
         scheduleDayExceptionRepository: ref.watch(
           scheduleDayExceptionRepositoryProvider,
         ),
+        useDoctorTimeZone: enableDoctorTimeZoneInProduction,
       );
     });
 
@@ -70,6 +72,7 @@ final rescheduleAvailabilityRepositoryProvider =
         scheduleDayExceptionRepository: ref.watch(
           scheduleDayExceptionRepositoryProvider,
         ),
+        useDoctorTimeZone: enableDoctorTimeZoneInProduction,
       );
     });
 
