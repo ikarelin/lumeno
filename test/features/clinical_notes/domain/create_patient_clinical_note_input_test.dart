@@ -23,6 +23,32 @@ void main() {
       );
     });
 
+    test('supports an optional Visit link without losing general notes', () {
+      expect(
+        const CreatePatientClinicalNoteInput(
+          patientId: 'patient-1',
+          body: 'General observation',
+        ).isValid,
+        isTrue,
+      );
+      expect(
+        const CreatePatientClinicalNoteInput(
+          patientId: 'patient-1',
+          visitId: 'visit-1',
+          body: 'Observation during Visit',
+        ).isValid,
+        isTrue,
+      );
+      expect(
+        const CreatePatientClinicalNoteInput(
+          patientId: 'patient-1',
+          visitId: '  ',
+          body: 'A Visit was requested but has no ID',
+        ).isValid,
+        isFalse,
+      );
+    });
+
     test('enforces the note-body length bound', () {
       final atLimit = 'a' * CreatePatientClinicalNoteInput.maxBodyCodePoints;
       expect(
