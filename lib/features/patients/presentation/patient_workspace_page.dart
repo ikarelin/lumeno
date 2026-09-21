@@ -16,7 +16,9 @@ import '../../quick_create/presentation/quick_create_presenter.dart';
 import '../domain/patient.dart';
 import '../domain/patient_contact_channel.dart';
 import '../domain/update_patient_input.dart';
+import '../../visits/presentation/providers/patient_visits_provider.dart';
 import 'providers/patient_provider.dart';
+import 'widgets/patient_visit_summary_cards.dart';
 
 class PatientWorkspacePage extends ConsumerWidget {
   const PatientWorkspacePage({required this.patientId, super.key});
@@ -149,6 +151,11 @@ class _PatientWorkspaceContentState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(context, isDesktop: isDesktop),
+              const SizedBox(height: AppSpacing.xl),
+              PatientVisitSummaryCards(
+                patientId: _baselinePatient.id,
+                canOpenDetails: !_isInteractionBusy && !_hasChanges,
+              ),
               const SizedBox(height: AppSpacing.xl),
               _buildContactCard(context, isDesktop: isDesktop),
             ],
@@ -740,6 +747,9 @@ class _PatientWorkspaceContentState
           patient: _baselinePatient,
         ),
       );
+      if (mounted) {
+        ref.invalidate(patientNextVisitProvider(_baselinePatient.id));
+      }
     } finally {
       if (mounted) {
         setState(() {

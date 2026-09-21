@@ -347,5 +347,15 @@
       "saveFailed": "We couldn't save your clinic. Please try again.",
       "addLater": "Add later"
     }
+  },
+  "patientVisitSummary":   {
+    "next": "Next visit",
+    "last": "Last visit",
+    "noUpcoming": "No upcoming visits",
+    "noCompleted": "No completed visits yet",
+    "scheduled": "Scheduled",
+    "completed": "Completed",
+    "loadFailed": "Could not load this visit.",
+    "open": "Open visit"
   }
 }
