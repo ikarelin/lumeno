@@ -16,12 +16,14 @@ class CalendarMonthView extends ConsumerWidget {
     super.key,
     required this.isDesktop,
     required this.selectedDate,
+    required this.today,
     required this.onAddVisit,
     required this.onSelectDay,
   });
 
   final bool isDesktop;
   final DateTime selectedDate;
+  final DateTime today;
   final VoidCallback onAddVisit;
   final ValueChanged<DateTime> onSelectDay;
 
@@ -35,6 +37,7 @@ class CalendarMonthView extends ConsumerWidget {
       data: (data) => _MonthContent(
         data: data,
         isDesktop: isDesktop,
+        today: today,
         onAddVisit: onAddVisit,
         onSelectDay: onSelectDay,
       ),
@@ -46,12 +49,14 @@ class _MonthContent extends StatelessWidget {
   const _MonthContent({
     required this.data,
     required this.isDesktop,
+    required this.today,
     required this.onAddVisit,
     required this.onSelectDay,
   });
 
   final CalendarMonthData data;
   final bool isDesktop;
+  final DateTime today;
   final VoidCallback onAddVisit;
   final ValueChanged<DateTime> onSelectDay;
 
@@ -152,7 +157,7 @@ class _MonthContent extends StatelessWidget {
 
                     return _MonthDayCell(
                       day: day,
-                      isToday: DateUtils.isSameDay(day.date, DateTime.now()),
+                      isToday: DateUtils.isSameDay(day.date, today),
                       showDivider: showDivider,
                       onTap: () => onSelectDay(day.date),
                     );

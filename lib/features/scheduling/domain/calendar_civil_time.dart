@@ -42,6 +42,33 @@ class CalendarCivilTime {
     return DoctorDayUtcRange(startUtc: first, endUtc: end);
   }
 
+  /// A readable wall-clock label for a slot/Visit absolute instant.
+  /// Two occurrences of a repeated DST hour are distinguished by UTC offset.
+  String clockLabel(DateTime instant) {
+    final wall = displayInstant(instant);
+    final clock = '${wall.hour.toString().padLeft(2, '0')}:'
+        '${wall.minute.toString().padLeft(2, '0')}';
+    final doctor = doctorTime;
+    if (doctor == null) return clock;
+
+    try {
+      doctor.instantAtCivilTimeUtc(
+        dayLabel(wall),
+        hour: wall.hour,
+        minute: wall.minute,
+        second: wall.second,
+      );
+      return clock;
+    } on StateError {
+      final offset = wall.timeZoneOffset;
+      final totalMinutes = offset.inMinutes.abs();
+      final sign = offset.isNegative ? '-' : '+';
+      final hours = (totalMinutes ~/ 60).toString().padLeft(2, '0');
+      final minutes = (totalMinutes % 60).toString().padLeft(2, '0');
+      return '$clock UTC$sign$hours:$minutes';
+    }
+  }
+
   bool isOnCivilDay(DateTime instant, DateTime civilDay) {
     final actual = civilDayAt(instant);
     return actual.year == civilDay.year &&

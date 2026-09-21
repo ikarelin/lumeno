@@ -80,6 +80,7 @@ Future<void> _pumpLauncher(WidgetTester tester) async {
               userId: 'doctor-1',
               fullName: 'Dr Test',
               specialty: 'Dentist',
+              timeZoneId: 'Asia/Tokyo',
               defaultDurationMinutes: 60,
             ),
           ),

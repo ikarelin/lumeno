@@ -8,7 +8,9 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../scheduling/domain/availability_interval.dart';
+import '../../../scheduling/presentation/providers/doctor_time_mode.dart';
 import '../../../visits/domain/visit.dart';
+import '../calendar_time_labels.dart';
 import '../controllers/calendar_day_controller.dart';
 import '../models/calendar_day_timeline_item.dart';
 import '../widgets/calendar_summary.dart';
@@ -36,7 +38,18 @@ class CalendarDayView extends ConsumerWidget {
     final availability = ref.watch(
       calendarDayAvailabilityProvider(selectedDate),
     );
-    final locale = context.locale.toLanguageTag();
+    final calendarTimeState = ref.watch(calendarCivilTimeProvider);
+    if (calendarTimeState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (calendarTimeState.hasError) {
+      return _LoadErrorCard();
+    }
+    final calendarTime = calendarTimeState.asData?.value;
+    if (calendarTime == null) {
+      return _LoadErrorCard();
+    }
+    final timeLabels = CalendarTimeLabels(calendarTime);
     final scheduledVisits = visits is AsyncData<List<Visit>>
         ? visits.value
               .where((visit) => visit.status == VisitStatus.scheduled)
@@ -77,7 +90,7 @@ class CalendarDayView extends ConsumerWidget {
                     .map(
                       (item) => _ScheduleItem.fromTimeline(
                         item,
-                        locale: locale,
+                        timeLabels: timeLabels,
                         patientLabel: 'calendar.patient'.tr(),
                       ),
                     )
@@ -106,6 +119,7 @@ class CalendarDayView extends ConsumerWidget {
                                       visit: entry.value.visit!,
                                       selectedDate: selectedDate,
                                       isDesktop: isDesktop,
+                                      calendarTime: calendarTime,
                                     );
                                   },
                                 _ScheduleKind.breakTime ||
@@ -373,11 +387,11 @@ class _ScheduleItem {
 
   factory _ScheduleItem.fromTimeline(
     CalendarDayTimelineItem item, {
-    required String locale,
+    required CalendarTimeLabels timeLabels,
     required String patientLabel,
   }) {
-    final start = DateFormat('HH:mm', locale).format(item.startsAt);
-    final end = DateFormat('HH:mm', locale).format(item.endsAt);
+    final start = timeLabels.clock(item.startsAt);
+    final end = timeLabels.clock(item.endsAt);
 
     return switch (item.kind) {
       CalendarDayTimelineItemKind.free => _ScheduleItem(

@@ -6,9 +6,13 @@ import '../../../../app/theme/app_breakpoints.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../profile/presentation/providers/doctor_profile_provider.dart';
+import '../../../scheduling/domain/calendar_civil_time.dart';
+import '../dashboard_time_labels.dart';
 
 class DashboardHeader extends ConsumerWidget {
-  const DashboardHeader({super.key});
+  const DashboardHeader({super.key, required this.calendarTime});
+
+  final CalendarCivilTime calendarTime;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,6 +22,8 @@ class DashboardHeader extends ConsumerWidget {
         MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop;
 
     final profileAsync = ref.watch(doctorProfileProvider);
+    final labels = DashboardTimeLabels(calendarTime);
+    final now = DateTime.now();
 
     final greeting = profileAsync.when(
       data: (profile) {
@@ -25,24 +31,18 @@ class DashboardHeader extends ConsumerWidget {
           return 'dashboard.title'.tr();
         }
 
-        final hour = DateTime.now().hour;
-        final greetingKey = switch (hour) {
-          >= 5 && < 12 => 'dashboard.greetingMorning',
-          >= 12 && < 18 => 'dashboard.greetingAfternoon',
-          >= 18 => 'dashboard.greetingEvening',
-          _ => 'dashboard.greetingNight',
-        };
-
-        return greetingKey.tr(namedArgs: {'name': profile.fullName});
+        return labels.greetingKey(now).tr(
+          namedArgs: {'name': profile.fullName},
+        );
       },
       loading: () => 'dashboard.title'.tr(),
       error: (_, _) => 'dashboard.title'.tr(),
     );
 
-    final formattedDate = DateFormat(
-      'EEEE, d MMMM',
+    final formattedDate = labels.headerDate(
+      now,
       context.locale.toLanguageTag(),
-    ).format(DateTime.now());
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

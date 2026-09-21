@@ -16,12 +16,14 @@ class CalendarWeekView extends ConsumerWidget {
     super.key,
     required this.isDesktop,
     required this.selectedDate,
+    required this.today,
     required this.onAddVisit,
     required this.onSelectDay,
   });
 
   final bool isDesktop;
   final DateTime selectedDate;
+  final DateTime today;
   final VoidCallback onAddVisit;
   final ValueChanged<DateTime> onSelectDay;
 
@@ -36,6 +38,7 @@ class CalendarWeekView extends ConsumerWidget {
         data: data,
         isDesktop: isDesktop,
         selectedDate: selectedDate,
+        today: today,
         onAddVisit: onAddVisit,
         onSelectDay: onSelectDay,
       ),
@@ -48,12 +51,14 @@ class _WeekContent extends StatelessWidget {
     required this.data,
     required this.isDesktop,
     required this.selectedDate,
+    required this.today,
     required this.onAddVisit,
     required this.onSelectDay,
   });
 
   final CalendarWeekData data;
   final bool isDesktop;
+  final DateTime today;
   final DateTime selectedDate;
   final VoidCallback onAddVisit;
   final ValueChanged<DateTime> onSelectDay;
@@ -81,10 +86,7 @@ class _WeekContent extends StatelessWidget {
                     (entry) => _WeekDayRow(
                       day: entry.value,
                       locale: locale,
-                      isToday: DateUtils.isSameDay(
-                        entry.value.date,
-                        DateTime.now(),
-                      ),
+                      isToday: DateUtils.isSameDay(entry.value.date, today),
                       isDesktop: isDesktop,
                       onTap: () async {
                         final result = await CalendarWeekDayActionsSurface.show(

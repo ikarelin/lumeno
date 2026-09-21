@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_breakpoints.dart';
@@ -11,6 +13,8 @@ import '../../clinics/presentation/providers/clinic_provider.dart';
 import '../../patients/presentation/providers/patient_provider.dart';
 import '../../profile/presentation/providers/doctor_profile_provider.dart';
 import '../../scheduling/domain/availability_repository.dart';
+import '../../scheduling/domain/calendar_civil_time.dart';
+import '../../scheduling/presentation/providers/doctor_time_mode.dart';
 import '../domain/quick_create_context.dart';
 import '../domain/quick_create_intent.dart';
 import 'controllers/quick_create_controller.dart';
@@ -49,6 +53,31 @@ abstract final class QuickCreatePresenter {
       }
     } catch (_) {
       // Quick Create should still open if Profile is temporarily unavailable.
+    }
+
+    // Shared with Calendar/availability; the production doctor-zone flag is
+    // still off until all calendar and dashboard consumers are migrated.
+    // An existing profile without a zone must resolve it explicitly before
+    // scheduling in doctor-zone mode. Keep Quick Create closed rather than
+    // silently falling back to device time or leaving an unhandled exception.
+    late final CalendarCivilTime calendarTime;
+    try {
+      calendarTime = await container.read(calendarCivilTimeProvider.future);
+    } on DoctorTimeZoneNotConfigured {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('calendar.timeZoneSetupRequired'.tr()),
+            action: SnackBarAction(
+              label: 'calendar.timeZoneSetupAction'.tr(),
+              onPressed: () {
+                if (context.mounted) context.go('/profile');
+              },
+            ),
+          ),
+        );
+      }
+      return null;
     }
 
     if (!context.mounted) {
@@ -105,10 +134,10 @@ abstract final class QuickCreatePresenter {
 
     try {
       if (MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop) {
-        return await _showDesktop(context, controller);
+        return await _showDesktop(context, controller, calendarTime);
       }
 
-      return await _showMobile(context, controller);
+      return await _showMobile(context, controller, calendarTime);
     } finally {
       controller
         ..removeListener(handleControllerChanged)
@@ -119,6 +148,7 @@ abstract final class QuickCreatePresenter {
   static Future<QuickCreateResult?> _showDesktop(
     BuildContext context,
     QuickCreateController controller,
+    CalendarCivilTime calendarTime,
   ) {
     return showGeneralDialog<QuickCreateResult>(
       context: context,
@@ -186,6 +216,7 @@ abstract final class QuickCreatePresenter {
                             clipBehavior: Clip.antiAlias,
                             child: QuickCreateSurface(
                               controller: controller,
+                              calendarTime: calendarTime,
                               onClose: () {
                                 Navigator.of(dialogContext).pop();
                               },
@@ -210,6 +241,7 @@ abstract final class QuickCreatePresenter {
   static Future<QuickCreateResult?> _showMobile(
     BuildContext context,
     QuickCreateController controller,
+    CalendarCivilTime calendarTime,
   ) {
     return showModalBottomSheet<QuickCreateResult>(
       context: context,
@@ -240,6 +272,7 @@ abstract final class QuickCreatePresenter {
                 clipBehavior: Clip.antiAlias,
                 child: QuickCreateSurface(
                   controller: controller,
+                  calendarTime: calendarTime,
                   scrollController: scrollController,
                   showDragHandle: true,
                   onClose: () {

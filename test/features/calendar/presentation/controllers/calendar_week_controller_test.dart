@@ -1,6 +1,9 @@
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lumeno/features/calendar/presentation/controllers/calendar_week_controller.dart';
+import 'package:lumeno/features/profile/domain/doctor_profile.dart';
+import 'package:lumeno/features/profile/presentation/providers/doctor_profile_provider.dart';
 import 'package:lumeno/features/scheduling/domain/availability_day.dart';
 import 'package:lumeno/features/scheduling/domain/availability_day_repository.dart';
 import 'package:lumeno/features/scheduling/domain/availability_interval.dart';
@@ -28,6 +31,14 @@ void main() {
       overrides: [
         visitQueryRepositoryProvider.overrideWithValue(visits),
         availabilityDayRepositoryProvider.overrideWithValue(availability),
+        doctorProfileProvider.overrideWith(
+          (ref) async => const DoctorProfile(
+            userId: 'doctor-1',
+            fullName: 'Dr Test',
+            specialty: 'Dentist',
+            timeZoneId: 'Asia/Tokyo',
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -45,8 +56,9 @@ void main() {
     expect(data.visitCount, 2);
     expect(data.availableWindowCount, 5);
     expect(data.workingDayCount, 5);
-    expect(visits.lastFrom, DateTime(2026, 9, 14));
-    expect(visits.lastTo, DateTime(2026, 9, 21));
+    // Doctor-local Monday 00:00 is Sunday 15:00 UTC for Asia/Tokyo.
+    expect(visits.lastFrom, DateTime.utc(2026, 9, 13, 15));
+    expect(visits.lastTo, DateTime.utc(2026, 9, 20, 15));
     expect(
       availability.requestedDays,
       List.generate(7, (index) => DateTime(2026, 9, 14 + index)),
@@ -64,7 +76,7 @@ Visit _visit({
     id: id,
     patientId: 'patient-$id',
     clinicId: 'clinic-1',
-    startsAt: DateTime(2026, 9, day, hour),
+    startsAt: DateTime.utc(2026, 9, day, hour),
     durationMinutes: 60,
     status: status,
   );

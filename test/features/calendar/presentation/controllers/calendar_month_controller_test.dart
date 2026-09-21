@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lumeno/features/calendar/presentation/controllers/calendar_month_controller.dart';
+import 'package:lumeno/features/profile/domain/doctor_profile.dart';
+import 'package:lumeno/features/profile/presentation/providers/doctor_profile_provider.dart';
 import 'package:lumeno/features/scheduling/domain/availability_day.dart';
 import 'package:lumeno/features/scheduling/domain/availability_range_repository.dart';
 import 'package:lumeno/features/scheduling/presentation/providers/availability_provider.dart';
@@ -30,6 +32,14 @@ void main() {
       overrides: [
         visitQueryRepositoryProvider.overrideWithValue(visits),
         availabilityRangeRepositoryProvider.overrideWithValue(availability),
+        doctorProfileProvider.overrideWith(
+          (ref) async => const DoctorProfile(
+            userId: 'doctor-1',
+            fullName: 'Dr Test',
+            specialty: 'Dentist',
+            timeZoneId: 'Asia/Tokyo',
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -49,8 +59,9 @@ void main() {
     expect(data.visitCount, 4);
     expect(data.busyDayCount, 3);
     expect(data.workingDayCount, 22);
-    expect(visits.lastFrom, DateTime(2026, 9, 1));
-    expect(visits.lastTo, DateTime(2026, 10, 1));
+    // Month query boundaries use the doctor's midnight, not device midnight.
+    expect(visits.lastFrom, DateTime.utc(2026, 8, 31, 15));
+    expect(visits.lastTo, DateTime.utc(2026, 9, 30, 15));
     expect(availability.fetchCalls, 1);
     expect(availability.lastFrom, DateTime(2026, 9, 1));
     expect(availability.lastTo, DateTime(2026, 10, 1));
@@ -68,7 +79,7 @@ Visit _visit({
     id: id,
     patientId: 'patient-$id',
     clinicId: 'clinic-1',
-    startsAt: DateTime(2026, 9, day, hour),
+    startsAt: DateTime.utc(2026, 9, day, hour),
     durationMinutes: durationMinutes,
     status: status,
   );

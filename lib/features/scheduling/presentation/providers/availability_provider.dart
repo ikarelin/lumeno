@@ -38,7 +38,7 @@ final profileVisitAvailabilityRepositoryProvider =
         scheduleDayExceptionRepository: ref.watch(
           scheduleDayExceptionRepositoryProvider,
         ),
-        useDoctorTimeZone: enableDoctorTimeZoneInProduction,
+        useDoctorTimeZone: ref.watch(doctorTimeZoneEnabledProvider),
       );
     });
 
@@ -72,7 +72,7 @@ final rescheduleAvailabilityRepositoryProvider =
         scheduleDayExceptionRepository: ref.watch(
           scheduleDayExceptionRepositoryProvider,
         ),
-        useDoctorTimeZone: enableDoctorTimeZoneInProduction,
+        useDoctorTimeZone: ref.watch(doctorTimeZoneEnabledProvider),
       );
     });
 

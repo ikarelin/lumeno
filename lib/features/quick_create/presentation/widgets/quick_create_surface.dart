@@ -12,6 +12,7 @@ import '../../../../shared/widgets/app_button.dart';
 
 import '../../../../shared/widgets/app_card.dart';
 
+import '../../../scheduling/domain/calendar_civil_time.dart';
 import '../../../scheduling/presentation/widgets/availability_date_time_picker.dart';
 
 import '../../domain/availability_slot.dart';
@@ -25,12 +26,15 @@ import '../../domain/quick_create_intent.dart';
 import '../../domain/quick_create_state.dart';
 
 import '../controllers/quick_create_controller.dart';
+import '../quick_create_time_labels.dart';
 
 class QuickCreateSurface extends StatefulWidget {
   const QuickCreateSurface({
     super.key,
 
     required this.controller,
+
+    this.calendarTime = const CalendarCivilTime(),
 
     required this.onClose,
 
@@ -42,6 +46,8 @@ class QuickCreateSurface extends StatefulWidget {
   });
 
   final QuickCreateController controller;
+
+  final CalendarCivilTime calendarTime;
 
   final VoidCallback onClose;
 
@@ -108,6 +114,8 @@ class _QuickCreateSurfaceState extends State<QuickCreateSurface> {
 
                           _VisitTimeSection(
                             controller: widget.controller,
+
+                            calendarTime: widget.calendarTime,
 
                             state: state,
                           ),
@@ -758,11 +766,17 @@ class _ClinicSectionState extends State<_ClinicSection> {
 }
 
 class _VisitTimeSection extends StatelessWidget {
-  const _VisitTimeSection({required this.controller, required this.state});
+  const _VisitTimeSection({
+    required this.controller,
+    required this.state,
+    required this.calendarTime,
+  });
 
   final QuickCreateController controller;
 
   final QuickCreateState state;
+
+  final CalendarCivilTime calendarTime;
 
   @override
   Widget build(BuildContext context) {
@@ -820,6 +834,8 @@ class _VisitTimeSection extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
 
             _SelectedTimeTile(
+              calendarTime: calendarTime,
+
               startsAt: startsAt,
 
               durationMinutes: state.durationMinutes,
@@ -848,6 +864,8 @@ class _VisitTimeSection extends StatelessWidget {
                 children: [
                   for (final slot in state.suggestedSlots)
                     _SlotChip(
+                      calendarTime: calendarTime,
+
                       slot: slot,
 
                       selected: state.selectedStartsAt == slot.startsAt,
@@ -884,6 +902,7 @@ class _VisitTimeSection extends StatelessWidget {
       availabilityRepository: controller.availabilityRepository,
       durationMinutes: state.durationMinutes,
       initialStartsAt: state.selectedStartsAt,
+      calendarTime: calendarTime,
       title: 'quickCreate.visit.manualTime'.tr(),
       timesLabel: 'quickCreate.visit.suggestedSlots'.tr(),
     );
@@ -898,10 +917,14 @@ class _VisitTimeSection extends StatelessWidget {
 
 class _SelectedTimeTile extends StatelessWidget {
   const _SelectedTimeTile({
+    required this.calendarTime,
+
     required this.startsAt,
 
     required this.durationMinutes,
   });
+
+  final CalendarCivilTime calendarTime;
 
   final DateTime startsAt;
 
@@ -913,13 +936,9 @@ class _SelectedTimeTile extends StatelessWidget {
 
     final locale = context.locale.toLanguageTag();
 
-    final endsAt = startsAt.add(Duration(minutes: durationMinutes));
-
-    final date = DateFormat('EEE, d MMM', locale).format(startsAt);
-
-    final time =
-        '${DateFormat.Hm(locale).format(startsAt)} - '
-        '${DateFormat.Hm(locale).format(endsAt)}';
+    final labels = QuickCreateTimeLabels(calendarTime);
+    final date = labels.selectedDate(startsAt, locale);
+    final time = labels.selectedRange(startsAt, durationMinutes);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -961,12 +980,16 @@ class _SelectedTimeTile extends StatelessWidget {
 
 class _SlotChip extends StatelessWidget {
   const _SlotChip({
+    required this.calendarTime,
+
     required this.slot,
 
     required this.selected,
 
     required this.onSelected,
   });
+
+  final CalendarCivilTime calendarTime;
 
   final AvailabilitySlot slot;
 
@@ -978,7 +1001,10 @@ class _SlotChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = context.locale.toLanguageTag();
 
-    final label = DateFormat('EEE HH:mm', locale).format(slot.startsAt);
+    final label = QuickCreateTimeLabels(calendarTime).slotChip(
+      slot.startsAt,
+      locale,
+    );
 
     return ChoiceChip(
       label: Text(label),

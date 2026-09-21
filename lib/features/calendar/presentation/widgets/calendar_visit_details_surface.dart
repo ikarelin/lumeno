@@ -6,9 +6,11 @@ import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../scheduling/domain/calendar_civil_time.dart';
 import '../../../scheduling/presentation/providers/availability_provider.dart';
 import '../../../scheduling/presentation/widgets/availability_date_time_picker.dart';
 import '../../../visits/domain/visit.dart';
+import '../calendar_time_labels.dart';
 import '../controllers/calendar_day_actions_controller.dart';
 import '../controllers/calendar_day_controller.dart';
 
@@ -18,17 +20,20 @@ class CalendarVisitDetailsSurface extends ConsumerStatefulWidget {
     required this.visit,
     required this.selectedDate,
     required this.isDesktop,
+    this.calendarTime = const CalendarCivilTime(),
   });
 
   final Visit visit;
   final DateTime selectedDate;
   final bool isDesktop;
+  final CalendarCivilTime calendarTime;
 
   static Future<void> show({
     required BuildContext context,
     required Visit visit,
     required DateTime selectedDate,
     required bool isDesktop,
+    CalendarCivilTime calendarTime = const CalendarCivilTime(),
   }) {
     if (isDesktop) {
       return showDialog<void>(
@@ -40,6 +45,7 @@ class CalendarVisitDetailsSurface extends ConsumerStatefulWidget {
               visit: visit,
               selectedDate: selectedDate,
               isDesktop: true,
+              calendarTime: calendarTime,
             ),
           ),
         ),
@@ -59,6 +65,7 @@ class CalendarVisitDetailsSurface extends ConsumerStatefulWidget {
           visit: visit,
           selectedDate: selectedDate,
           isDesktop: false,
+          calendarTime: calendarTime,
         ),
       ),
     );
@@ -139,6 +146,7 @@ class _CalendarVisitDetailsSurfaceState
       availabilityRepository: availabilityRepository,
       durationMinutes: _visit.durationMinutes,
       initialStartsAt: _visit.startsAt,
+      calendarTime: widget.calendarTime,
       title: 'quickCreate.visit.manualTime'.tr(),
       timesLabel: 'quickCreate.visit.suggestedSlots'.tr(),
     );
@@ -265,10 +273,9 @@ class _CalendarVisitDetailsSurfaceState
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final locale = context.locale.toLanguageTag();
-    final dateLabel = DateFormat('EEEE, d MMMM', locale).format(_visit.startsAt);
-    final timeLabel =
-        '${DateFormat.Hm(locale).format(_visit.startsAt)} - '
-        '${DateFormat.Hm(locale).format(_visit.endsAt)}';
+    final timeLabels = CalendarTimeLabels(widget.calendarTime);
+    final dateLabel = timeLabels.date(_visit.startsAt, locale);
+    final timeLabel = timeLabels.range(_visit.startsAt, _visit.endsAt);
 
     final content = Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -537,7 +544,7 @@ class _CalendarVisitDetailsSurfaceState
               Expanded(
                 child: Text(
                   '${_visit.patientName ?? _visit.patientId} • '
-                  '${DateFormat.Hm(context.locale.toLanguageTag()).format(_visit.startsAt)}',
+                  '${widget.calendarTime.clockLabel(_visit.startsAt)}',
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

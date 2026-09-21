@@ -7,6 +7,7 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../domain/availability_repository.dart';
 import '../../domain/availability_slot.dart';
+import '../../domain/calendar_civil_time.dart';
 
 const _pickerSlotLimit = 4096;
 
@@ -17,6 +18,7 @@ Future<AvailabilitySlot?> showAvailabilityDateTimePicker({
   required String title,
   required String timesLabel,
   DateTime? initialStartsAt,
+  CalendarCivilTime calendarTime = const CalendarCivilTime(),
   int searchHorizonDays = 30,
 }) {
   assert(searchHorizonDays > 0);
@@ -31,6 +33,7 @@ Future<AvailabilitySlot?> showAvailabilityDateTimePicker({
       durationMinutes: durationMinutes,
       from: from,
       initialStartsAt: initialStartsAt,
+      calendarTime: calendarTime,
       searchHorizonDays: searchHorizonDays,
       title: title,
       timesLabel: timesLabel,
@@ -91,6 +94,7 @@ class AvailabilityDateTimePicker extends StatefulWidget {
     required this.onSelected,
     required this.onClose,
     this.initialStartsAt,
+    this.calendarTime = const CalendarCivilTime(),
     this.searchHorizonDays = 30,
   }) : assert(searchHorizonDays > 0);
 
@@ -98,6 +102,7 @@ class AvailabilityDateTimePicker extends StatefulWidget {
   final int durationMinutes;
   final DateTime from;
   final DateTime? initialStartsAt;
+  final CalendarCivilTime calendarTime;
   final int searchHorizonDays;
   final String title;
   final String timesLabel;
@@ -125,7 +130,18 @@ class _AvailabilityDateTimePickerState
     _firstDay.day + widget.searchHorizonDays,
   );
 
-  DateTime get _lastDay => _rangeEnd.subtract(const Duration(days: 1));
+  DateTime get _lastDay => DateTime(
+    _firstDay.year,
+    _firstDay.month,
+    _firstDay.day + widget.searchHorizonDays - 1,
+  );
+
+  DateTime get _endInstantExclusive => widget.calendarTime.doctorTime == null
+      ? _rangeEnd
+      : widget.calendarTime.visitQueryRange(
+          firstCivilDay: _firstDay,
+          endExclusiveCivilDay: _rangeEnd,
+        ).endUtc;
 
   @override
   void initState() {
@@ -140,7 +156,8 @@ class _AvailabilityDateTimePickerState
     if (oldWidget.durationMinutes != widget.durationMinutes ||
         oldWidget.from != widget.from ||
         oldWidget.searchHorizonDays != widget.searchHorizonDays ||
-        oldWidget.availabilityRepository != widget.availabilityRepository) {
+        oldWidget.availabilityRepository != widget.availabilityRepository ||
+        oldWidget.calendarTime != widget.calendarTime) {
       _loadAvailability();
     }
   }
@@ -160,20 +177,20 @@ class _AvailabilityDateTimePickerState
 
       final inRange = slots
           .where((slot) => !slot.startsAt.isBefore(widget.from))
-          .where((slot) => slot.startsAt.isBefore(_rangeEnd))
+          .where((slot) => slot.startsAt.isBefore(_endInstantExclusive))
           .toList(growable: false)
         ..sort((left, right) => left.startsAt.compareTo(right.startsAt));
 
       final grouped = <DateTime, List<AvailabilitySlot>>{};
 
       for (final slot in inRange) {
-        final day = _localDay(slot.startsAt);
+        final day = widget.calendarTime.civilDayAt(slot.startsAt);
         grouped.putIfAbsent(day, () => <AvailabilitySlot>[]).add(slot);
       }
 
       final initialDay = widget.initialStartsAt == null
           ? null
-          : _localDay(widget.initialStartsAt!);
+          : widget.calendarTime.civilDayAt(widget.initialStartsAt!);
 
       final selectedDay = initialDay != null && grouped.containsKey(initialDay)
           ? initialDay
@@ -297,6 +314,7 @@ class _AvailabilityDateTimePickerState
         selectedDay: _selectedDay!,
         firstDay: _firstDay,
         lastDay: _lastDay,
+        today: widget.calendarTime.civilDayAt(DateTime.now()),
         availableDays: _slotsByDay.keys.toSet(),
         onVisibleMonthChanged: (month) {
           setState(() {
@@ -345,6 +363,7 @@ class _AvailabilityDateTimePickerState
               for (final slot in slots)
                 _TimeOption(
                   slot: slot,
+                  calendarTime: widget.calendarTime,
                   selected: widget.initialStartsAt != null &&
                       slot.startsAt == widget.initialStartsAt,
                   onPressed: () => widget.onSelected(slot),
@@ -362,10 +381,7 @@ class _AvailabilityDateTimePickerState
     return SingleChildScrollView(child: content);
   }
 
-  DateTime _localDay(DateTime value) {
-    final local = value.toLocal();
-    return DateTime(local.year, local.month, local.day);
-  }
+  DateTime _localDay(DateTime value) => widget.calendarTime.civilDayAt(value);
 }
 
 
@@ -375,6 +391,7 @@ class _AvailabilityCalendar extends StatelessWidget {
     required this.selectedDay,
     required this.firstDay,
     required this.lastDay,
+    required this.today,
     required this.availableDays,
     required this.onVisibleMonthChanged,
     required this.onDaySelected,
@@ -384,6 +401,7 @@ class _AvailabilityCalendar extends StatelessWidget {
   final DateTime selectedDay;
   final DateTime firstDay;
   final DateTime lastDay;
+  final DateTime today;
   final Set<DateTime> availableDays;
   final ValueChanged<DateTime> onVisibleMonthChanged;
   final ValueChanged<DateTime> onDaySelected;
@@ -482,7 +500,7 @@ class _AvailabilityCalendar extends StatelessWidget {
             );
             final isAvailable = availableDays.contains(day);
             final isSelected = DateUtils.isSameDay(day, selectedDay);
-            final isToday = DateUtils.isSameDay(day, DateTime.now());
+            final isToday = DateUtils.isSameDay(day, today);
 
             return _CalendarDayButton(
               day: day,
@@ -651,19 +669,21 @@ class _PickerUnavailableState extends StatelessWidget {
 class _TimeOption extends StatelessWidget {
   const _TimeOption({
     required this.slot,
+    required this.calendarTime,
     required this.selected,
     required this.onPressed,
   });
 
   final AvailabilitySlot slot;
+  final CalendarCivilTime calendarTime;
   final bool selected;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final startLabel = _formatClockTime(slot.startsAt);
-    final endLabel = _formatClockTime(slot.endsAt);
+    final startLabel = calendarTime.clockLabel(slot.startsAt);
+    final endLabel = calendarTime.clockLabel(slot.endsAt);
     final slotKey = ValueKey<String>(
       'availability-time-${slot.startsAt.toIso8601String()}',
     );
@@ -673,7 +693,7 @@ class _TimeOption extends StatelessWidget {
       selected: selected,
       label: '$startLabel–$endLabel',
       child: SizedBox(
-        width: 96,
+        width: startLabel.contains(' UTC') ? 164 : 96,
         height: 44,
         child: OutlinedButton(
           key: slotKey,
@@ -696,13 +716,6 @@ class _TimeOption extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatClockTime(DateTime value) {
-  final local = value.toLocal();
-  final hour = local.hour.toString().padLeft(2, '0');
-  final minute = local.minute.toString().padLeft(2, '0');
-  return '$hour:$minute';
 }
 
 extension<T> on Iterable<T> {

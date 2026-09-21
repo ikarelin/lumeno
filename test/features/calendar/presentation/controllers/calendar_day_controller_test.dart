@@ -25,6 +25,14 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         visitQueryRepositoryProvider.overrideWithValue(repository),
+        doctorProfileProvider.overrideWith(
+          (ref) async => const DoctorProfile(
+            userId: 'doctor-1',
+            fullName: 'Dr Test',
+            specialty: 'Dentist',
+            timeZoneId: 'Asia/Tokyo',
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -38,8 +46,9 @@ void main() {
       visits.map((visit) => visit.id),
       ['visit-1', 'visit-2', 'visit-3'],
     );
-    expect(repository.lastFrom, DateTime(2026, 9, 15));
-    expect(repository.lastTo, DateTime(2026, 9, 16));
+    // Midnight in Tokyo (UTC+09:00) is 15:00 UTC on the previous day.
+    expect(repository.lastFrom, DateTime.utc(2026, 9, 14, 15));
+    expect(repository.lastTo, DateTime.utc(2026, 9, 15, 15));
   });
   test(
     'Calendar Day refreshes availability when Profile scheduling changes',
@@ -111,7 +120,7 @@ Visit _visit({
     id: id,
     patientId: 'patient-$id',
     clinicId: 'clinic-1',
-    startsAt: DateTime(2026, 9, 15, hour),
+    startsAt: DateTime.utc(2026, 9, 15, hour),
     durationMinutes: 30,
   );
 }
@@ -141,6 +150,7 @@ DoctorProfile _profile({required List<int> workingDays}) {
     userId: 'doctor-1',
     fullName: 'Dr Test',
     specialty: 'Dentist',
+    timeZoneId: 'Asia/Tokyo',
     defaultDurationMinutes: 60,
     workingDays: workingDays,
     workdayStart: '09:00',

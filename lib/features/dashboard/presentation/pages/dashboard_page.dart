@@ -12,8 +12,12 @@ import '../../../quick_create/domain/quick_create_intent.dart';
 import '../../../quick_create/domain/quick_create_source.dart';
 import '../../../quick_create/presentation/quick_create_presenter.dart';
 import '../../../scheduling/domain/availability_slot.dart';
+import '../../../scheduling/domain/calendar_civil_time.dart';
+import '../../../scheduling/presentation/providers/doctor_time_mode.dart';
+import '../../../scheduling/presentation/widgets/doctor_time_zone_required_view.dart';
 import '../../../visits/domain/visit.dart';
 import '../controllers/dashboard_controller.dart';
+import '../dashboard_time_labels.dart';
 import '../widgets/dashboard_available_slot_card.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/dashboard_next_visit_card.dart';
@@ -30,6 +34,22 @@ class DashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDesktop =
         MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop;
+    final calendarTimeState = ref.watch(calendarCivilTimeProvider);
+    final calendarTime = calendarTimeState.asData?.value;
+    if (calendarTime == null) {
+      return Scaffold(
+        body: Center(
+          child: calendarTimeState.asError?.error is DoctorTimeZoneNotConfigured
+              ? DoctorTimeZoneRequiredView(
+                  onOpenProfile: () => context.go('/profile'),
+                )
+              : calendarTimeState.hasError
+                  ? Text('calendar.loadError'.tr())
+                  : const CircularProgressIndicator(),
+        ),
+      );
+    }
+    final labels = DashboardTimeLabels(calendarTime);
     final visits = ref.watch(dashboardVisitsProvider);
     final availability = ref.watch(dashboardAvailabilityProvider);
 
@@ -43,19 +63,21 @@ class DashboardPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const DashboardHeader(),
+                  DashboardHeader(calendarTime: calendarTime),
                   const SizedBox(height: AppSpacing.xl),
                   DashboardPrimaryCards(
                     nextVisitCard: _buildNextVisitCard(
                       context,
                       ref,
                       visits,
+                      labels: labels,
                       isDesktop: isDesktop,
                     ),
                     availableSlotCard: _buildAvailableSlotCard(
                       context,
                       ref,
                       availability,
+                      labels: labels,
                     ),
                   ),
                   if (isDesktop) ...[
@@ -70,6 +92,7 @@ class DashboardPage extends ConsumerWidget {
                       context,
                       ref,
                       visits,
+                      labels: labels,
                       isDesktop: isDesktop,
                     ),
                   ],
@@ -104,6 +127,7 @@ class DashboardPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AsyncValue<DashboardVisitsData> visits, {
+    required DashboardTimeLabels labels,
     required bool isDesktop,
   }) {
     return visits.when(
@@ -126,13 +150,14 @@ class DashboardPage extends ConsumerWidget {
         }
 
         return DashboardNextVisitCard(
-          time: _formatTime(context, visit.startsAt),
+          time: labels.clock(visit.startsAt),
           patientName: _patientName(visit),
-          detail: _formatDate(context, visit.startsAt),
+          detail: labels.date(visit.startsAt, context.locale.toLanguageTag()),
           onTap: () => _openVisit(
             context,
             ref,
             visit,
+            calendarTime: labels.calendarTime,
             isDesktop: isDesktop,
           ),
         );
@@ -143,8 +168,9 @@ class DashboardPage extends ConsumerWidget {
   Widget _buildAvailableSlotCard(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue<DashboardAvailabilityData> availability,
-  ) {
+    AsyncValue<DashboardAvailabilityData> availability, {
+    required DashboardTimeLabels labels,
+  }) {
     return availability.when(
       loading: () => const DashboardAvailableSlotCard(isLoading: true),
       error: (_, _) => DashboardAvailableSlotCard(
@@ -170,8 +196,8 @@ class DashboardPage extends ConsumerWidget {
             final slot = data.slot!;
 
             return DashboardAvailableSlotCard(
-              dateLabel: _formatDate(context, slot.startsAt),
-              timeRange: _formatSlotTime(context, slot),
+              dateLabel: labels.date(slot.startsAt, context.locale.toLanguageTag()),
+              timeRange: labels.slotRange(slot),
               onTap: () => _openAvailableSlot(context, ref, slot),
             );
         }
@@ -183,6 +209,7 @@ class DashboardPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AsyncValue<DashboardVisitsData> visits, {
+    required DashboardTimeLabels labels,
     required bool isDesktop,
   }) {
     return visits.when(
@@ -206,13 +233,14 @@ class DashboardPage extends ConsumerWidget {
           visits: data.upcomingVisits
               .map(
                 (visit) => DashboardUpcomingVisit(
-                  timeLabel: _formatTime(context, visit.startsAt),
+                  timeLabel: labels.clock(visit.startsAt),
                   patientName: _patientName(visit),
-                  detail: _formatDate(context, visit.startsAt),
+                  detail: labels.date(visit.startsAt, context.locale.toLanguageTag()),
                   onTap: () => _openVisit(
                     context,
                     ref,
                     visit,
+                    calendarTime: labels.calendarTime,
                     isDesktop: isDesktop,
                   ),
                 ),
@@ -227,12 +255,14 @@ class DashboardPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Visit visit, {
+    required CalendarCivilTime calendarTime,
     required bool isDesktop,
   }) async {
     await CalendarVisitDetailsSurface.show(
       context: context,
       visit: visit,
-      selectedDate: visit.startsAt.toLocal(),
+      selectedDate: calendarTime.civilDayAt(visit.startsAt),
+      calendarTime: calendarTime,
       isDesktop: isDesktop,
     );
 
@@ -273,25 +303,6 @@ class DashboardPage extends ConsumerWidget {
     ref
       ..invalidate(dashboardVisitsProvider)
       ..invalidate(dashboardAvailabilityProvider);
-  }
-
-
-  String _formatTime(BuildContext context, DateTime value) {
-    return DateFormat.Hm(
-      context.locale.toLanguageTag(),
-    ).format(value.toLocal());
-  }
-
-  String _formatDate(BuildContext context, DateTime value) {
-    return DateFormat(
-      'EEE, d MMM',
-      context.locale.toLanguageTag(),
-    ).format(value.toLocal());
-  }
-
-  String _formatSlotTime(BuildContext context, AvailabilitySlot slot) {
-    final format = DateFormat.Hm(context.locale.toLanguageTag());
-    return '${format.format(slot.startsAt.toLocal())} - ${format.format(slot.endsAt.toLocal())}';
   }
 
   String _patientName(Visit visit) {

@@ -184,7 +184,9 @@
       "monthBusyDays": "Busy days"
     },
     "weekend": "Day off",
-    "weekSummary": "{0} visits · {1} free windows"
+    "weekSummary": "{0} visits · {1} free windows",
+    "timeZoneSetupRequired": "To create or reschedule visits in doctor time, select your IANA time zone in Profile and save it. The device time zone is not selected automatically.",
+    "timeZoneSetupAction": "Set doctor time zone"
   },
   "files": {
     "title": "Files"
