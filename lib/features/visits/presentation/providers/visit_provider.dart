@@ -17,3 +17,9 @@ final visitManagementRepositoryProvider = Provider<VisitManagementRepository>((
 ) {
   return SupabaseVisitRepository(Supabase.instance.client);
 });
+
+/// The same Supabase Visit repository, with patient-specific read operations.
+final patientVisitQueryRepositoryProvider =
+    Provider<PatientVisitQueryRepository>((ref) {
+  return SupabaseVisitRepository(Supabase.instance.client);
+});

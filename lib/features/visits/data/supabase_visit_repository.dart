@@ -9,6 +9,7 @@ class SupabaseVisitRepository
     implements
         VisitRepository,
         VisitQueryRepository,
+        PatientVisitQueryRepository,
         VisitManagementRepository {
   SupabaseVisitRepository(this._client);
 
@@ -34,9 +35,85 @@ class SupabaseVisitRepository
         .select(_visitColumns)
         .lt('starts_at', to.toUtc().toIso8601String())
         .gt('ends_at', from.toUtc().toIso8601String())
-        .order('starts_at', ascending: true);
+        .order('starts_at');
 
     return rows.map(_mapVisit).toList(growable: false);
+  }
+
+  @override
+  Future<Visit?> fetchNextPatientVisit({
+    required String patientId,
+    required DateTime from,
+  }) async {
+    final user = _ensureAuthenticated();
+    final id = _requirePatientId(patientId);
+    final row = await _client
+        .from('visits')
+        .select(_visitColumns)
+        .eq('doctor_user_id', user.id)
+        .eq('patient_id', id)
+        .eq('status', VisitStatus.scheduled.name)
+        .gte('starts_at', from.toUtc().toIso8601String())
+        .order('starts_at')
+        .order('id')
+        .limit(1)
+        .maybeSingle();
+    return row == null ? null : _mapVisit(row);
+  }
+
+  @override
+  Future<Visit?> fetchLastCompletedPatientVisit({
+    required String patientId,
+    required DateTime before,
+  }) async {
+    final user = _ensureAuthenticated();
+    final id = _requirePatientId(patientId);
+    final row = await _client
+        .from('visits')
+        .select(_visitColumns)
+        .eq('doctor_user_id', user.id)
+        .eq('patient_id', id)
+        .eq('status', VisitStatus.completed.name)
+        .lt('starts_at', before.toUtc().toIso8601String())
+        .order('starts_at', ascending: false)
+        .order('id', ascending: false)
+        .limit(1)
+        .maybeSingle();
+    return row == null ? null : _mapVisit(row);
+  }
+
+  @override
+  Future<List<Visit>> fetchPatientVisitsPage({
+    required String patientId,
+    int offset = 0,
+    int pageSize = 30,
+  }) async {
+    final user = _ensureAuthenticated();
+    final id = _requirePatientId(patientId);
+    if (offset < 0) {
+      throw RangeError.value(offset, 'offset', 'Must not be negative');
+    }
+    if (pageSize < 1 || pageSize > 100) {
+      throw RangeError.range(pageSize, 1, 100, 'pageSize');
+    }
+
+    final rows = await _client
+        .from('visits')
+        .select(_visitColumns)
+        .eq('doctor_user_id', user.id)
+        .eq('patient_id', id)
+        .order('starts_at', ascending: false)
+        .order('id', ascending: false)
+        .range(offset, offset + pageSize - 1);
+    return rows.map(_mapVisit).toList(growable: false);
+  }
+
+  String _requirePatientId(String patientId) {
+    final id = patientId.trim();
+    if (id.isEmpty) {
+      throw ArgumentError.value(patientId, 'patientId', 'Must not be empty');
+    }
+    return id;
   }
 
   @override
