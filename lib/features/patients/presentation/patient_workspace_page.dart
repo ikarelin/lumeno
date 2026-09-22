@@ -156,6 +156,19 @@ class _PatientWorkspaceContentState
                 patientId: _baselinePatient.id,
                 canOpenDetails: !_isInteractionBusy && !_hasChanges,
               ),
+              const SizedBox(height: AppSpacing.md),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: AppButton.secondary(
+                  label: 'patientVisitHistory.allVisits'.tr(),
+                  icon: Icons.history_rounded,
+                  onPressed: _isInteractionBusy || _hasChanges
+                      ? null
+                      : () => context.push(
+                          '/patients/${Uri.encodeComponent(_baselinePatient.id)}/visits',
+                        ),
+                ),
+              ),
               const SizedBox(height: AppSpacing.xl),
               _buildContactCard(context, isDesktop: isDesktop),
             ],

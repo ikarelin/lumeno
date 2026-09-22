@@ -357,5 +357,18 @@
     "completed": "Completed",
     "loadFailed": "Could not load this visit.",
     "open": "Open visit"
+  },
+  "patientVisitHistory": {
+    "title": "All visits",
+    "allVisits": "All visits",
+    "empty": "No visits for this patient yet.",
+    "loadFailed": "Could not load visit history.",
+    "loadMoreFailed": "Could not load more visits.",
+    "timeFailed": "Could not load the doctor’s time zone.",
+    "scheduled": "Scheduled",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "loadMore": "Show more",
+    "open": "Open visit"
   }
 }
