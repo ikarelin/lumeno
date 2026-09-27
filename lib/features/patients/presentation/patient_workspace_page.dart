@@ -18,6 +18,7 @@ import '../domain/patient_contact_channel.dart';
 import '../domain/update_patient_input.dart';
 import '../../visits/presentation/providers/patient_visits_provider.dart';
 import 'providers/patient_provider.dart';
+import 'widgets/patient_clinical_notes_section.dart';
 import 'widgets/patient_visit_summary_cards.dart';
 
 class PatientWorkspacePage extends ConsumerWidget {
@@ -170,7 +171,35 @@ class _PatientWorkspaceContentState
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              _buildContactCard(context, isDesktop: isDesktop),
+              if (isDesktop)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: PatientClinicalNotesSection(
+                        patientId: _baselinePatient.id,
+                        enabled: !_isInteractionBusy && !_hasChanges,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      flex: 2,
+                      child: _buildContactCard(
+                        context,
+                        isDesktop: false,
+                      ),
+                    ),
+                  ],
+                )
+              else ...[
+                PatientClinicalNotesSection(
+                  patientId: _baselinePatient.id,
+                  enabled: !_isInteractionBusy && !_hasChanges,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                _buildContactCard(context, isDesktop: false),
+              ],
             ],
           ),
         ),

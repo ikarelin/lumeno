@@ -17,6 +17,7 @@ class SupabasePatientClinicalNoteRepository
   Future<List<PatientClinicalNote>> fetchForPatient({
     required String patientId,
     int limit = 50,
+    int offset = 0,
   }) async {
     final user = _requireUser();
     final normalizedPatientId = patientId.trim();
@@ -26,6 +27,9 @@ class SupabasePatientClinicalNoteRepository
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
     }
+    if (offset < 0) {
+      throw RangeError.value(offset, 'offset', 'Must be >= 0');
+    }
 
     final rows = await _client
         .from('patient_clinical_notes')
@@ -34,7 +38,7 @@ class SupabasePatientClinicalNoteRepository
         .eq('patient_id', normalizedPatientId)
         .order('created_at', ascending: false)
         .order('id', ascending: false)
-        .limit(limit);
+        .range(offset, offset + limit - 1);
 
     return rows.map(_fromRow).toList(growable: false);
   }
@@ -44,6 +48,7 @@ class SupabasePatientClinicalNoteRepository
     required String patientId,
     required String visitId,
     int limit = 50,
+    int offset = 0,
   }) async {
     final user = _requireUser();
     final normalizedPatientId = patientId.trim();
@@ -54,6 +59,9 @@ class SupabasePatientClinicalNoteRepository
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
     }
+    if (offset < 0) {
+      throw RangeError.value(offset, 'offset', 'Must be >= 0');
+    }
 
     final rows = await _client
         .from('patient_clinical_notes')
@@ -63,7 +71,7 @@ class SupabasePatientClinicalNoteRepository
         .eq('visit_id', normalizedVisitId)
         .order('created_at', ascending: false)
         .order('id', ascending: false)
-        .limit(limit);
+        .range(offset, offset + limit - 1);
     return rows.map(_fromRow).toList(growable: false);
   }
 

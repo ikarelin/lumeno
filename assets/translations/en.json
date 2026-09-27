@@ -348,7 +348,7 @@
       "addLater": "Add later"
     }
   },
-  "patientVisitSummary":   {
+  "patientVisitSummary": {
     "next": "Next visit",
     "last": "Last visit",
     "noUpcoming": "No upcoming visits",
@@ -370,5 +370,29 @@
     "cancelled": "Cancelled",
     "loadMore": "Show more",
     "open": "Open visit"
+  },
+  "clinicalNotes": {
+    "title": "Clinical notes",
+    "newNote": "New note",
+    "empty": "No clinical notes yet.",
+    "loadFailed": "Could not load clinical notes.",
+    "loadMoreFailed": "Could not load more clinical notes.",
+    "loadMore": "Show more",
+    "dateUnavailable": "Date unavailable",
+    "general": "General note",
+    "linkedVisit": "Linked visit",
+    "createTitle": "New clinical note",
+    "createDescription": "Add a patient-scoped clinical entry. Linking it to a visit is optional.",
+    "visitContext": "Visit context",
+    "visitsLoadFailed": "Could not load visits. Retry",
+    "loadMoreVisits": "Show more visits",
+    "body": "Clinical note",
+    "bodyHint": "Clinical observation, treatment context or other medical information",
+    "saving": "Saving…",
+    "save": "Save note",
+    "saveFailed": "Could not save the clinical note.",
+    "detailsTitle": "Clinical note",
+    "openVisit": "Open visit",
+    "linkedVisitUnavailable": "Linked visit is unavailable"
   }
 }

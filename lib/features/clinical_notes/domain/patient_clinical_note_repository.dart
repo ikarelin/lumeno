@@ -6,6 +6,7 @@ abstract interface class PatientClinicalNoteRepository {
   Future<List<PatientClinicalNote>> fetchForPatient({
     required String patientId,
     int limit = 50,
+    int offset = 0,
   });
 
   /// Returns only notes explicitly linked to this patient and Visit.
@@ -13,6 +14,7 @@ abstract interface class PatientClinicalNoteRepository {
     required String patientId,
     required String visitId,
     int limit = 50,
+    int offset = 0,
   });
 
   /// Creates a new entry. Existing entries cannot be mutated in this slice.

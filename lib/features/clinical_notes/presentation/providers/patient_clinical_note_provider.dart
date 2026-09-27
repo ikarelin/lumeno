@@ -16,3 +16,15 @@ final patientClinicalNotesProvider =
         patientId: patientId,
       );
 });
+
+/// Stable value key for patient clinical-note pagination.
+typedef PatientClinicalNotesPageKey = ({String patientId, int offset});
+
+final patientClinicalNotesPageProvider = FutureProvider.autoDispose
+    .family<List<PatientClinicalNote>, PatientClinicalNotesPageKey>((ref, key) {
+  return ref.watch(patientClinicalNoteRepositoryProvider).fetchForPatient(
+        patientId: key.patientId,
+        limit: 30,
+        offset: key.offset,
+      );
+});
