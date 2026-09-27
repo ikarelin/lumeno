@@ -6,36 +6,16 @@ import 'package:lumeno/features/visits/domain/visit_repository.dart';
 
 void main() {
   group('CalendarDayActionsController', () {
-    test('updates only visit note while preserving scheduling fields', () async {
-      final repository = _FakeVisitManagementRepository();
-      final controller = CalendarDayActionsController(repository: repository);
-      final visit = _visit();
-
-      final updated = await controller.updateVisitNote(
-        visit: visit,
-        note: 'Updated context',
-      );
-
-      final input = repository.lastUpdateInput;
-      expect(input, isNotNull);
-      expect(input!.visitId, visit.id);
-      expect(input.patientId, visit.patientId);
-      expect(input.clinicId, visit.clinicId);
-      expect(input.startsAt, visit.startsAt);
-      expect(input.durationMinutes, visit.durationMinutes);
-      expect(input.note, 'Updated context');
-      expect(updated.note, 'Updated context');
-    });
-
-    test('reschedules visit while preserving non-time fields', () async {
+    test('updates time and note in one repository mutation', () async {
       final repository = _FakeVisitManagementRepository();
       final controller = CalendarDayActionsController(repository: repository);
       final visit = _visit();
       final startsAt = DateTime(2026, 9, 15, 14, 30);
 
-      final updated = await controller.rescheduleVisit(
+      final updated = await controller.updateVisitDetails(
         visit: visit,
         startsAt: startsAt,
+        note: 'Updated context',
       );
 
       final input = repository.lastUpdateInput;
@@ -45,10 +25,10 @@ void main() {
       expect(input.clinicId, visit.clinicId);
       expect(input.startsAt, startsAt);
       expect(input.durationMinutes, visit.durationMinutes);
-      expect(input.note, visit.note);
+      expect(input.note, 'Updated context');
       expect(updated.startsAt, startsAt);
       expect(updated.durationMinutes, visit.durationMinutes);
-      expect(updated.note, visit.note);
+      expect(updated.note, 'Updated context');
     });
 
     test('cancels the selected visit', () async {

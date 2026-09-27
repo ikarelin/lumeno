@@ -17,25 +17,10 @@ class CalendarDayActionsController {
 
   final VisitManagementRepository repository;
 
-  Future<Visit> updateVisitNote({
-    required Visit visit,
-    required String note,
-  }) {
-    return repository.updateVisit(
-      UpdateVisitInput(
-        visitId: visit.id,
-        patientId: visit.patientId,
-        clinicId: visit.clinicId,
-        startsAt: visit.startsAt,
-        durationMinutes: visit.durationMinutes,
-        note: note,
-      ),
-    );
-  }
-
-  Future<Visit> rescheduleVisit({
+  Future<Visit> updateVisitDetails({
     required Visit visit,
     required DateTime startsAt,
+    required String note,
   }) {
     return repository.updateVisit(
       UpdateVisitInput(
@@ -44,7 +29,7 @@ class CalendarDayActionsController {
         clinicId: visit.clinicId,
         startsAt: startsAt,
         durationMinutes: visit.durationMinutes,
-        note: visit.note,
+        note: note,
       ),
     );
   }

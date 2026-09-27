@@ -79,6 +79,7 @@ class CalendarVisitDetailsSurface extends ConsumerStatefulWidget {
 class _CalendarVisitDetailsSurfaceState
     extends ConsumerState<CalendarVisitDetailsSurface> {
   late Visit _visit;
+  late DateTime _draftStartsAt;
   late final TextEditingController _noteController;
 
   bool _isEditing = false;
@@ -86,10 +87,16 @@ class _CalendarVisitDetailsSurfaceState
   _DestructiveAction? _pendingAction;
   String? _errorMessage;
 
+  bool get _hasChanges {
+    return _draftStartsAt != _visit.startsAt ||
+        _noteController.text.trim() != _visit.note.trim();
+  }
+
   @override
   void initState() {
     super.initState();
     _visit = widget.visit;
+    _draftStartsAt = _visit.startsAt;
     _noteController = TextEditingController(text: _visit.note);
   }
 
@@ -99,7 +106,11 @@ class _CalendarVisitDetailsSurfaceState
     super.dispose();
   }
 
-  Future<void> _saveNote() async {
+  Future<void> _saveChanges() async {
+    if (_isBusy || !_hasChanges) {
+      return;
+    }
+
     FocusScope.of(context).unfocus();
 
     setState(() {
@@ -110,73 +121,17 @@ class _CalendarVisitDetailsSurfaceState
     try {
       final updated = await ref
           .read(calendarDayActionsControllerProvider)
-          .updateVisitNote(visit: _visit, note: _noteController.text);
+          .updateVisitDetails(
+            visit: _visit,
+            startsAt: _draftStartsAt,
+            note: _noteController.text,
+          );
 
-      ref.invalidate(calendarDayVisitsProvider(widget.selectedDate));
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _visit = updated;
-        _noteController.text = updated.note;
-        _isEditing = false;
-        _isBusy = false;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _isBusy = false;
-        _errorMessage = 'quickCreate.errors.saveFailed'.tr();
-      });
-    }
-  }
-
-  Future<void> _rescheduleVisit() async {
-    final availabilityRepository = ref.read(
-      rescheduleAvailabilityRepositoryProvider(_visit.id),
-    );
-
-    final slot = await showAvailabilityDateTimePicker(
-      context: context,
-      availabilityRepository: availabilityRepository,
-      durationMinutes: _visit.durationMinutes,
-      initialStartsAt: _visit.startsAt,
-      calendarTime: widget.calendarTime,
-      title: 'quickCreate.visit.manualTime'.tr(),
-      timesLabel: 'quickCreate.visit.suggestedSlots'.tr(),
-    );
-
-    if (slot == null || !mounted || slot.startsAt == _visit.startsAt) {
-      return;
-    }
-
-    setState(() {
-      _isBusy = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final updated = await ref
-          .read(calendarDayActionsControllerProvider)
-          .rescheduleVisit(visit: _visit, startsAt: slot.startsAt);
-
-      ref.invalidate(calendarDayVisitsProvider(widget.selectedDate));
-      ref.invalidate(calendarDayAvailabilityProvider(widget.selectedDate));
+      _invalidateVisitDays(updated);
 
       if (!mounted) {
         return;
       }
-
-      setState(() {
-        _visit = updated;
-        _noteController.text = updated.note;
-        _isBusy = false;
-      });
 
       Navigator.of(context).pop();
     } catch (_) {
@@ -188,6 +143,42 @@ class _CalendarVisitDetailsSurfaceState
         _isBusy = false;
         _errorMessage = 'quickCreate.errors.saveFailed'.tr();
       });
+    }
+  }
+
+  Future<void> _chooseAnotherTime() async {
+    final availabilityRepository = ref.read(
+      rescheduleAvailabilityRepositoryProvider(_visit.id),
+    );
+
+    final slot = await showAvailabilityDateTimePicker(
+      context: context,
+      availabilityRepository: availabilityRepository,
+      durationMinutes: _visit.durationMinutes,
+      initialStartsAt: _draftStartsAt,
+      calendarTime: widget.calendarTime,
+      title: 'quickCreate.visit.manualTime'.tr(),
+      timesLabel: 'quickCreate.visit.suggestedSlots'.tr(),
+    );
+
+    if (slot == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _draftStartsAt = slot.startsAt;
+      _errorMessage = null;
+    });
+  }
+
+  void _invalidateVisitDays(Visit updated) {
+    ref.invalidate(calendarDayVisitsProvider(widget.selectedDate));
+    ref.invalidate(calendarDayAvailabilityProvider(widget.selectedDate));
+
+    final updatedDay = widget.calendarTime.civilDayAt(updated.startsAt);
+    if (!DateUtils.isSameDay(updatedDay, widget.selectedDate)) {
+      ref.invalidate(calendarDayVisitsProvider(updatedDay));
+      ref.invalidate(calendarDayAvailabilityProvider(updatedDay));
     }
   }
 
@@ -236,6 +227,7 @@ class _CalendarVisitDetailsSurfaceState
 
   void _startEditing() {
     setState(() {
+      _draftStartsAt = _visit.startsAt;
       _noteController.text = _visit.note;
       _isEditing = true;
       _pendingAction = null;
@@ -245,7 +237,9 @@ class _CalendarVisitDetailsSurfaceState
 
   void _cancelEditing() {
     FocusScope.of(context).unfocus();
+
     setState(() {
+      _draftStartsAt = _visit.startsAt;
       _noteController.text = _visit.note;
       _isEditing = false;
       _errorMessage = null;
@@ -256,6 +250,7 @@ class _CalendarVisitDetailsSurfaceState
     setState(() {
       _pendingAction = action;
       _isEditing = false;
+      _draftStartsAt = _visit.startsAt;
       _noteController.text = _visit.note;
       _errorMessage = null;
     });
@@ -274,8 +269,12 @@ class _CalendarVisitDetailsSurfaceState
     final colorScheme = theme.colorScheme;
     final locale = context.locale.toLanguageTag();
     final timeLabels = CalendarTimeLabels(widget.calendarTime);
-    final dateLabel = timeLabels.date(_visit.startsAt, locale);
-    final timeLabel = timeLabels.range(_visit.startsAt, _visit.endsAt);
+    final visibleStartsAt = _isEditing ? _draftStartsAt : _visit.startsAt;
+    final visibleEndsAt = visibleStartsAt.add(
+      Duration(minutes: _visit.durationMinutes),
+    );
+    final dateLabel = timeLabels.date(visibleStartsAt, locale);
+    final timeLabel = timeLabels.range(visibleStartsAt, visibleEndsAt);
 
     final content = Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -330,10 +329,7 @@ class _CalendarVisitDetailsSurfaceState
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          _VisitMetaTile(
-            icon: Icons.schedule_rounded,
-            value: timeLabel,
-          ),
+          _VisitMetaTile(icon: Icons.schedule_rounded, value: timeLabel),
           const SizedBox(height: AppSpacing.sm),
           _VisitMetaTile(
             icon: Icons.timelapse_rounded,
@@ -345,14 +341,16 @@ class _CalendarVisitDetailsSurfaceState
           if (_pendingAction != null)
             _buildDestructiveConfirmation(colorScheme)
           else if (_isEditing)
-            _buildEditForm(colorScheme)
+            _buildEditForm(colorScheme, timeLabels, locale)
           else
             _buildReadOnlyContent(colorScheme),
           if (_errorMessage != null) ...[
             const SizedBox(height: AppSpacing.md),
             Text(
               _errorMessage!,
-              style: AppTextStyles.bodyMedium.copyWith(color: colorScheme.error),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: colorScheme.error,
+              ),
             ),
           ],
         ],
@@ -383,48 +381,45 @@ class _CalendarVisitDetailsSurfaceState
           Text(note, style: AppTextStyles.bodyLarge),
           const SizedBox(height: AppSpacing.lg),
         ],
-        if (_visit.status == VisitStatus.scheduled) ...[
+        if (widget.isDesktop) ...[
           AppButton.secondary(
-            label: 'quickCreate.visit.manualTime'.tr(),
-            icon: Icons.event_available_outlined,
+            label: 'patientVisitSummary.editVisit'.tr(),
+            icon: Icons.edit_outlined,
             fullWidth: true,
-            onPressed: _isBusy ? null : _rescheduleVisit,
+            onPressed: _isBusy ? null : _startEditing,
           ),
           const SizedBox(height: AppSpacing.sm),
-        ],
-        if (widget.isDesktop)
-          Row(
-            children: [
-              AppButton.secondary(
-                label: 'patients.edit'.tr(),
-                icon: Icons.edit_outlined,
-                onPressed: _isBusy ? null : _startEditing,
-              ),
-              const Spacer(),
-              _DestructiveTextButton(
-                label: 'patients.cancel'.tr(),
-                icon: Icons.event_busy_outlined,
-                onPressed: _isBusy
-                    ? null
-                    : () => _requestDestructiveAction(
-                        _DestructiveAction.cancel,
-                      ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              _DestructiveTextButton(
-                label: 'clinicManagement.delete'.tr(),
-                icon: Icons.delete_outline_rounded,
-                onPressed: _isBusy
-                    ? null
-                    : () => _requestDestructiveAction(
-                        _DestructiveAction.delete,
-                      ),
-              ),
-            ],
-          )
-        else ...[
+          Align(
+            alignment: Alignment.centerRight,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                _DestructiveTextButton(
+                  label: 'patients.cancel'.tr(),
+                  icon: Icons.event_busy_outlined,
+                  onPressed: _isBusy
+                      ? null
+                      : () => _requestDestructiveAction(
+                          _DestructiveAction.cancel,
+                        ),
+                ),
+                _DestructiveTextButton(
+                  label: 'clinicManagement.delete'.tr(),
+                  icon: Icons.delete_outline_rounded,
+                  onPressed: _isBusy
+                      ? null
+                      : () => _requestDestructiveAction(
+                          _DestructiveAction.delete,
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
           AppButton.secondary(
-            label: 'patients.edit'.tr(),
+            label: 'patientVisitSummary.editVisit'.tr(),
             icon: Icons.edit_outlined,
             fullWidth: true,
             onPressed: _isBusy ? null : _startEditing,
@@ -462,16 +457,45 @@ class _CalendarVisitDetailsSurfaceState
     );
   }
 
-  Widget _buildEditForm(ColorScheme colorScheme) {
+  Widget _buildEditForm(
+    ColorScheme colorScheme,
+    CalendarTimeLabels timeLabels,
+    String locale,
+  ) {
+    final draftEndsAt = _draftStartsAt.add(
+      Duration(minutes: _visit.durationMinutes),
+    );
+    final draftDate = timeLabels.date(_draftStartsAt, locale);
+    final draftTime = timeLabels.range(_draftStartsAt, draftEndsAt);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_visit.status == VisitStatus.scheduled) ...[
+          Text(
+            draftDate,
+            style: AppTextStyles.labelMedium.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(draftTime, style: AppTextStyles.bodyLarge),
+          const SizedBox(height: AppSpacing.sm),
+          AppButton.secondary(
+            label: 'quickCreate.visit.manualTime'.tr(),
+            icon: Icons.event_available_outlined,
+            fullWidth: true,
+            onPressed: _isBusy ? null : _chooseAnotherTime,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         TextFormField(
           controller: _noteController,
           enabled: !_isBusy,
           minLines: 3,
           maxLines: 6,
           textCapitalization: TextCapitalization.sentences,
+          onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             labelText: 'quickCreate.visit.note'.tr(),
             hintText: 'quickCreate.visit.noteHint'.tr(),
@@ -495,7 +519,7 @@ class _CalendarVisitDetailsSurfaceState
                 label: _isBusy
                     ? 'patients.saving'.tr()
                     : 'patients.saveChanges'.tr(),
-                onPressed: _isBusy ? null : _saveNote,
+                onPressed: _isBusy || !_hasChanges ? null : _saveChanges,
               ),
             ],
           )
@@ -505,7 +529,7 @@ class _CalendarVisitDetailsSurfaceState
                 ? 'patients.saving'.tr()
                 : 'patients.saveChanges'.tr(),
             fullWidth: true,
-            onPressed: _isBusy ? null : _saveNote,
+            onPressed: _isBusy || !_hasChanges ? null : _saveChanges,
           ),
           const SizedBox(height: AppSpacing.sm),
           AppButton.secondary(

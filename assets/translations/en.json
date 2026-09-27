@@ -356,7 +356,8 @@
     "scheduled": "Scheduled",
     "completed": "Completed",
     "loadFailed": "Could not load this visit.",
-    "open": "Open visit"
+    "open": "Open visit",
+    "editVisit": "Edit visit"
   },
   "patientVisitHistory": {
     "title": "All visits",
