@@ -18,9 +18,9 @@ class SupabaseAuthSessionRepository
 
   @override
   Stream<AuthSessionStatus> watchStatus() {
-    return _client.auth.onAuthStateChange
-        .map((authState) => _resolveUser(authState.session?.user))
-        .distinct();
+    return _client.auth.onAuthStateChange.map(
+      (authState) => _resolveUser(authState.session?.user),
+    );
   }
 
   @override

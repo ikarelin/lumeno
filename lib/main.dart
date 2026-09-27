@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
+import 'app/auth/auth_user_scope.dart';
 import 'core/network/supabase_config.dart';
 import 'features/patients/presentation/providers/patient_provider.dart';
 import 'features/quick_create/presentation/providers/quick_create_providers.dart';
@@ -22,24 +23,30 @@ Future<void> main() async {
     publishableKey: SupabaseConfig.publishableKey,
   );
 
+  final auth = Supabase.instance.client.auth;
+
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('ru')],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
-      child: ProviderScope(
-        overrides: [
-          quickCreatePatientRepositoryProvider.overrideWith((ref) {
-            return ref.watch(patientRepositoryProvider);
-          }),
-          quickCreateVisitRepositoryProvider.overrideWith((ref) {
-            return ref.watch(visitRepositoryProvider);
-          }),
-          quickCreateAvailabilityRepositoryProvider.overrideWith((ref) {
-            return ref.watch(availabilityRepositoryProvider);
-          }),
-        ],
-        child: const LumenoApp(),
+      child: AuthUserScope(
+        initialUserId: auth.currentUser?.id,
+        userIds: auth.onAuthStateChange.map((event) => event.session?.user.id),
+        child: ProviderScope(
+          overrides: [
+            quickCreatePatientRepositoryProvider.overrideWith((ref) {
+              return ref.watch(patientRepositoryProvider);
+            }),
+            quickCreateVisitRepositoryProvider.overrideWith((ref) {
+              return ref.watch(visitRepositoryProvider);
+            }),
+            quickCreateAvailabilityRepositoryProvider.overrideWith((ref) {
+              return ref.watch(availabilityRepositoryProvider);
+            }),
+          ],
+          child: const LumenoApp(),
+        ),
       ),
     ),
   );
