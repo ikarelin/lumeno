@@ -8,14 +8,13 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/visit_summary_card.dart';
 import '../../../calendar/presentation/widgets/calendar_visit_details_surface.dart';
 import '../../../scheduling/domain/calendar_civil_time.dart';
 import '../../../scheduling/presentation/providers/doctor_time_mode.dart';
 import '../../../visits/domain/visit.dart';
 import '../../../visits/presentation/providers/patient_visits_provider.dart';
 
-/// Only the approved Next / Last visit overview. History and clinical notes
-/// are deliberately outside the scope of PATIENT-WORKSPACE-01A.
 class PatientVisitSummaryCards extends ConsumerWidget {
   const PatientVisitSummaryCards({
     required this.patientId,
@@ -40,7 +39,6 @@ class PatientVisitSummaryCards extends ConsumerWidget {
       state: next,
       calendarTimeState: calendarTimeState,
       emptyLabel: 'patientVisitSummary.noUpcoming'.tr(),
-      statusLabel: 'patientVisitSummary.scheduled'.tr(),
       canOpenDetails: canOpenDetails,
       onRetry: () => ref.invalidate(patientNextVisitProvider(patientId)),
       onTimeRetry: () => ref.invalidate(calendarCivilTimeProvider),
@@ -53,9 +51,9 @@ class PatientVisitSummaryCards extends ConsumerWidget {
       state: last,
       calendarTimeState: calendarTimeState,
       emptyLabel: 'patientVisitSummary.noCompleted'.tr(),
-      statusLabel: 'patientVisitSummary.completed'.tr(),
       canOpenDetails: canOpenDetails,
-      onRetry: () => ref.invalidate(patientLastCompletedVisitProvider(patientId)),
+      onRetry: () =>
+          ref.invalidate(patientLastCompletedVisitProvider(patientId)),
       onTimeRetry: () => ref.invalidate(calendarCivilTimeProvider),
       onOpen: (visit, calendarTime) =>
           _openDetails(context, ref, visit, isDesktop, calendarTime),
@@ -72,13 +70,15 @@ class PatientVisitSummaryCards extends ConsumerWidget {
       );
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: nextCard),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(child: lastCard),
-      ],
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: nextCard),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(child: lastCard),
+        ],
+      ),
     );
   }
 
@@ -97,7 +97,7 @@ class PatientVisitSummaryCards extends ConsumerWidget {
       calendarTime: calendarTime,
     );
     if (!context.mounted) return;
-    // Notes and status can change in the existing visit-details surface.
+
     ref
       ..invalidate(patientNextVisitProvider(patientId))
       ..invalidate(patientLastCompletedVisitProvider(patientId));
@@ -111,7 +111,6 @@ class _VisitSummaryCard extends StatelessWidget {
     required this.state,
     required this.calendarTimeState,
     required this.emptyLabel,
-    required this.statusLabel,
     required this.canOpenDetails,
     required this.onRetry,
     required this.onTimeRetry,
@@ -123,7 +122,6 @@ class _VisitSummaryCard extends StatelessWidget {
   final AsyncValue<Visit?> state;
   final AsyncValue<CalendarCivilTime> calendarTimeState;
   final String emptyLabel;
-  final String statusLabel;
   final bool canOpenDetails;
   final VoidCallback onRetry;
   final VoidCallback onTimeRetry;
@@ -131,136 +129,145 @@ class _VisitSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return state.when(
+      skipLoadingOnRefresh: false,
+      loading: () => _VisitSummaryStateCard.loading(label: label, icon: icon),
+      error: (_, _) => _VisitSummaryStateCard.error(
+        label: label,
+        icon: icon,
+        onRetry: onRetry,
+      ),
+      data: (visit) {
+        if (visit == null) {
+          return _VisitSummaryStateCard.empty(
+            label: label,
+            icon: icon,
+            message: emptyLabel,
+          );
+        }
+
+        if (calendarTimeState.isLoading) {
+          return _VisitSummaryStateCard.loading(label: label, icon: icon);
+        }
+
+        final calendarTime = calendarTimeState.asData?.value;
+        if (calendarTime == null) {
+          return _VisitSummaryStateCard.error(
+            label: label,
+            icon: icon,
+            onRetry: onTimeRetry,
+          );
+        }
+
+        final locale = context.locale.toLanguageTag();
+        final dateLabel = DateFormat(
+          'EEE, d MMM',
+          locale,
+        ).format(calendarTime.displayInstant(visit.startsAt));
+        final note = visit.note.trim();
+
+        return VisitSummaryCard(
+          title: label,
+          icon: icon,
+          time: calendarTime.clockLabel(visit.startsAt),
+          detail: dateLabel,
+          note: note.isEmpty ? null : note,
+          noteLabel: note.isEmpty ? null : 'quickCreate.visit.note'.tr(),
+          noteMaxLines: 3,
+          actionLabel: 'patientVisitSummary.open'.tr(),
+          onTap: canOpenDetails ? () => onOpen(visit, calendarTime) : null,
+        );
+      },
+    );
+  }
+}
+
+class _VisitSummaryStateCard extends StatelessWidget {
+  const _VisitSummaryStateCard._({
+    required this.label,
+    required this.icon,
+    this.message,
+    this.onRetry,
+    this.isLoading = false,
+    this.isError = false,
+  });
+
+  const _VisitSummaryStateCard.loading({
+    required String label,
+    required IconData icon,
+  }) : this._(label: label, icon: icon, isLoading: true);
+
+  const _VisitSummaryStateCard.empty({
+    required String label,
+    required IconData icon,
+    required String message,
+  }) : this._(label: label, icon: icon, message: message);
+
+  const _VisitSummaryStateCard.error({
+    required String label,
+    required IconData icon,
+    required VoidCallback onRetry,
+  }) : this._(label: label, icon: icon, onRetry: onRetry, isError: true);
+
+  final String label;
+  final IconData icon;
+  final String? message;
+  final VoidCallback? onRetry;
+  final bool isLoading;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final messageColor = isError
+        ? colorScheme.error
+        : colorScheme.onSurfaceVariant;
+
     return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Icon(icon, color: colorScheme.primary, size: 20),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(child: Text(label, style: AppTextStyles.titleLarge)),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          state.when(
-            skipLoadingOnRefresh: false,
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Center(child: CircularProgressIndicator.adaptive()),
-            ),
-            error: (_, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 184),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text('patientVisitSummary.loadFailed'.tr(),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: colorScheme.error,
-                    )),
-                const SizedBox(height: AppSpacing.sm),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(icon, size: 20, color: colorScheme.primary),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(child: Text(label, style: AppTextStyles.titleLarge)),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            if (isLoading)
+              const SizedBox(
+                height: 96,
+                child: Center(child: CircularProgressIndicator.adaptive()),
+              )
+            else ...[
+              Text(
+                isError
+                    ? 'patientVisitSummary.loadFailed'.tr()
+                    : message ?? '—',
+                style: AppTextStyles.bodyMedium.copyWith(color: messageColor),
+              ),
+              if (isError && onRetry != null) ...[
+                const SizedBox(height: AppSpacing.md),
                 AppButton.secondary(
                   label: 'patients.retry'.tr(),
                   onPressed: onRetry,
                 ),
               ],
-            ),
-            data: (visit) {
-              if (visit == null) {
-                return Text(
-                  emptyLabel,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                );
-              }
-              // Visit.startsAt is an absolute instant. Display it in the
-              // doctor's configured IANA zone, never in the device zone.
-              if (calendarTimeState.isLoading) {
-                return const Center(child: CircularProgressIndicator.adaptive());
-              }
-              final calendarTime = calendarTimeState.asData?.value;
-              if (calendarTime == null) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'patientVisitSummary.loadFailed'.tr(),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: colorScheme.error,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    AppButton.secondary(
-                      label: 'patients.retry'.tr(),
-                      onPressed: onTimeRetry,
-                    ),
-                  ],
-                );
-              }
-              final dateLabel = '${DateFormat(
-                'd MMMM y',
-                context.locale.toLanguageTag(),
-              ).format(calendarTime.displayInstant(visit.startsAt))} '
-                  '· ${calendarTime.clockLabel(visit.startsAt)}';
-              final note = visit.note.trim();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(dateLabel, style: AppTextStyles.titleLarge),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    statusLabel,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (note.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.40),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('quickCreate.visit.note'.tr(),
-                              style: AppTextStyles.labelMedium.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              )),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            note,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: AppSpacing.md),
-                  AppButton.secondary(
-                    label: 'patientVisitSummary.open'.tr(),
-                    onPressed: canOpenDetails ? () => onOpen(visit, calendarTime) : null,
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }

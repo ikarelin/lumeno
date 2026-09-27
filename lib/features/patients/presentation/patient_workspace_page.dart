@@ -153,22 +153,11 @@ class _PatientWorkspaceContentState
             children: [
               _buildHeader(context, isDesktop: isDesktop),
               const SizedBox(height: AppSpacing.xl),
+              _buildVisitsSectionHeader(context),
+              const SizedBox(height: AppSpacing.md),
               PatientVisitSummaryCards(
                 patientId: _baselinePatient.id,
                 canOpenDetails: !_isInteractionBusy && !_hasChanges,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: AppButton.secondary(
-                  label: 'patientVisitHistory.allVisits'.tr(),
-                  icon: Icons.history_rounded,
-                  onPressed: _isInteractionBusy || _hasChanges
-                      ? null
-                      : () => context.push(
-                          '/patients/${Uri.encodeComponent(_baselinePatient.id)}/visits',
-                        ),
-                ),
               ),
               const SizedBox(height: AppSpacing.xl),
               if (isDesktop)
@@ -185,10 +174,7 @@ class _PatientWorkspaceContentState
                     const SizedBox(width: AppSpacing.lg),
                     Expanded(
                       flex: 2,
-                      child: _buildContactCard(
-                        context,
-                        isDesktop: false,
-                      ),
+                      child: _buildContactCard(context, isDesktop: false),
                     ),
                   ],
                 )
@@ -204,6 +190,38 @@ class _PatientWorkspaceContentState
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildVisitsSectionHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final enabled = !_isInteractionBusy && !_hasChanges;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'calendar.legend.visits'.tr(),
+            style: AppTextStyles.titleLarge,
+          ),
+        ),
+        TextButton(
+          onPressed: enabled
+              ? () => context.push(
+                  '/patients/${Uri.encodeComponent(_baselinePatient.id)}/visits',
+                )
+              : null,
+          style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('patientVisitHistory.allVisits'.tr()),
+              const SizedBox(width: AppSpacing.xs),
+              const Icon(Icons.arrow_forward_rounded, size: 18),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

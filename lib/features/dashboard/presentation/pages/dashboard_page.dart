@@ -44,8 +44,8 @@ class DashboardPage extends ConsumerWidget {
                   onOpenProfile: () => context.go('/profile'),
                 )
               : calendarTimeState.hasError
-                  ? Text('calendar.loadError'.tr())
-                  : const CircularProgressIndicator(),
+              ? Text('calendar.loadError'.tr())
+              : const CircularProgressIndicator(),
         ),
       );
     }
@@ -153,6 +153,7 @@ class DashboardPage extends ConsumerWidget {
           time: labels.clock(visit.startsAt),
           patientName: _patientName(visit),
           detail: labels.date(visit.startsAt, context.locale.toLanguageTag()),
+          note: visit.note.trim().isEmpty ? null : visit.note.trim(),
           onTap: () => _openVisit(
             context,
             ref,
@@ -196,7 +197,10 @@ class DashboardPage extends ConsumerWidget {
             final slot = data.slot!;
 
             return DashboardAvailableSlotCard(
-              dateLabel: labels.date(slot.startsAt, context.locale.toLanguageTag()),
+              dateLabel: labels.date(
+                slot.startsAt,
+                context.locale.toLanguageTag(),
+              ),
               timeRange: labels.slotRange(slot),
               onTap: () => _openAvailableSlot(context, ref, slot),
             );
@@ -235,7 +239,10 @@ class DashboardPage extends ConsumerWidget {
                 (visit) => DashboardUpcomingVisit(
                   timeLabel: labels.clock(visit.startsAt),
                   patientName: _patientName(visit),
-                  detail: labels.date(visit.startsAt, context.locale.toLanguageTag()),
+                  detail: labels.date(
+                    visit.startsAt,
+                    context.locale.toLanguageTag(),
+                  ),
                   onTap: () => _openVisit(
                     context,
                     ref,

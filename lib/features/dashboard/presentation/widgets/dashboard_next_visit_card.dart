@@ -5,6 +5,7 @@ import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/visit_summary_card.dart';
 
 class DashboardNextVisitCard extends StatelessWidget {
   const DashboardNextVisitCard({
@@ -12,6 +13,7 @@ class DashboardNextVisitCard extends StatelessWidget {
     this.time,
     this.patientName,
     this.detail,
+    this.note,
     this.message,
     this.actionLabel,
     this.onTap,
@@ -23,6 +25,7 @@ class DashboardNextVisitCard extends StatelessWidget {
   final String? time;
   final String? patientName;
   final String? detail;
+  final String? note;
   final String? message;
   final String? actionLabel;
   final VoidCallback? onTap;
@@ -35,11 +38,24 @@ class DashboardNextVisitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_hasVisit) {
+      return VisitSummaryCard(
+        title: 'dashboard.nextVisit'.tr(),
+        icon: Icons.event_outlined,
+        time: time!,
+        primaryText: patientName!,
+        detail: detail!,
+        note: note,
+        noteMaxLines: 2,
+        actionLabel: 'dashboard.openVisit'.tr(),
+        onTap: onTap,
+      );
+    }
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      onTap: _hasVisit ? onTap : null,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 184),
         child: Column(
@@ -75,12 +91,6 @@ class DashboardNextVisitCard extends StatelessWidget {
                 height: 116,
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (_hasVisit)
-              _VisitContent(
-                time: time!,
-                patientName: patientName!,
-                detail: detail!,
-              )
             else
               _StateContent(
                 message: message ?? '—',
@@ -91,70 +101,6 @@ class DashboardNextVisitCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _VisitContent extends StatelessWidget {
-  const _VisitContent({
-    required this.time,
-    required this.patientName,
-    required this.detail,
-  });
-
-  final String time;
-  final String patientName;
-  final String detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          time,
-          style: AppTextStyles.headlineMedium.copyWith(
-            color: colorScheme.primary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          patientName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          detail,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Row(
-          children: [
-            Text(
-              'dashboard.openVisit'.tr(),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Icon(
-              Icons.arrow_forward_rounded,
-              size: 18,
-              color: colorScheme.primary,
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
@@ -185,9 +131,7 @@ class _StateContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(
-              isError
-                  ? Icons.error_outline_rounded
-                  : Icons.event_busy_outlined,
+              isError ? Icons.error_outline_rounded : Icons.event_busy_outlined,
               color: accent,
             ),
             const SizedBox(width: AppSpacing.sm),

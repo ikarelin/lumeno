@@ -21,53 +21,91 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('renders doctor-local visit times, details, comments and states', (tester) async {
-    tester.view.physicalSize = const Size(1440, 1050);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await _pump(tester, _FakePatientVisits(
-      next: Visit(
-        id: 'visit-next',
-        patientId: 'patient-a',
-        clinicId: 'clinic-1',
-        // 09:00 Asia/Tokyo, 03:00 Europe/Moscow: keep the UTC instant.
-        startsAt: DateTime.utc(2026, 9, 22),
-        durationMinutes: 30,
-        note: 'Check lab results',
-      ),
-      last: Visit(
-        id: 'visit-last',
-        patientId: 'patient-a',
-        clinicId: 'clinic-1',
-        startsAt: DateTime(2026, 9, 12, 11),
-        durationMinutes: 30,
-        status: VisitStatus.completed,
-        note: '  ',
-      ),
-    ));
+  testWidgets(
+    'renders doctor-local visit times, details, comments and states',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1050);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _pump(
+        tester,
+        _FakePatientVisits(
+          next: Visit(
+            id: 'visit-next',
+            patientId: 'patient-a',
+            clinicId: 'clinic-1',
+            // 09:00 Asia/Tokyo, 03:00 Europe/Moscow: keep the UTC instant.
+            startsAt: DateTime.utc(2026, 9, 22),
+            durationMinutes: 30,
+            note: 'Check lab results',
+          ),
+          last: Visit(
+            id: 'visit-last',
+            patientId: 'patient-a',
+            clinicId: 'clinic-1',
+            startsAt: DateTime(2026, 9, 12, 11),
+            durationMinutes: 30,
+            status: VisitStatus.completed,
+            note: '  ',
+          ),
+        ),
+      );
 
-    expect(find.text('Next visit'), findsOneWidget);
-    expect(find.text('22 September 2026 · 09:00'), findsOneWidget);
-    expect(find.text('Last visit'), findsOneWidget);
-    expect(find.text('Check lab results'), findsOneWidget);
-    expect(find.text('Doctor comment'), findsNothing); // No invented text.
-    expect(find.text('Open visit'), findsNWidgets(2));
-    await tester.tap(find.text('Open visit').first);
-    await tester.pumpAndSettle();
-    expect(find.text('09:00 - 09:30'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.close_rounded).last);
-    await tester.pumpAndSettle();
+      expect(find.text('Next visit'), findsOneWidget);
+      expect(find.text('09:00'), findsOneWidget);
+      expect(find.text('Tue, 22 Sep'), findsOneWidget);
+      expect(find.text('Last visit'), findsOneWidget);
+      expect(find.text('Check lab results'), findsOneWidget);
+      expect(find.text('Scheduled'), findsNothing);
+      expect(find.text('Doctor comment'), findsNothing); // No invented text.
+      expect(find.text('Open visit'), findsNWidgets(2));
+      await tester.tap(find.text('Open visit').first);
+      await tester.pumpAndSettle();
+      expect(find.text('09:00 - 09:30'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.close_rounded).last);
+      await tester.pumpAndSettle();
 
-    // Keep the initialized EasyLocalization ancestor mounted. A second
-    // testWidgets could finish pumpAndSettle before its asset loading had
-    // built the app at all (and tester.element would then throw).
-    await _pump(tester, _FakePatientVisits(), showErrorState: true);
-    expect(find.byType(PatientVisitSummaryCards), findsOneWidget);
-    expect(find.text('Could not load this visit.'), findsOneWidget);
-    expect(find.text('No completed visits yet'), findsOneWidget);
-    expect(find.text('Open visit'), findsNothing);
-  });
+      // Keep the initialized EasyLocalization ancestor mounted. A second
+      // testWidgets could finish pumpAndSettle before its asset loading had
+      // built the app at all (and tester.element would then throw).
+      await _pump(tester, _FakePatientVisits(), showErrorState: true);
+      expect(find.byType(PatientVisitSummaryCards), findsOneWidget);
+      expect(find.text('Could not load this visit.'), findsOneWidget);
+      expect(find.text('No completed visits yet'), findsOneWidget);
+      expect(find.text('Open visit'), findsNothing);
+
+      // Reuse the same testWidgets so EasyLocalization stays initialized, while
+      // still exercising the actual mobile stacking path.
+      tester.view.physicalSize = const Size(390, 900);
+      await _pump(
+        tester,
+        _FakePatientVisits(
+          next: Visit(
+            id: 'visit-next-mobile',
+            patientId: 'patient-a',
+            clinicId: 'clinic-1',
+            startsAt: DateTime.utc(2026, 9, 22),
+            durationMinutes: 30,
+            note: 'A note long enough to exercise the compact mobile layout.',
+          ),
+          last: Visit(
+            id: 'visit-last-mobile',
+            patientId: 'patient-a',
+            clinicId: 'clinic-1',
+            startsAt: DateTime.utc(2026, 9, 20),
+            durationMinutes: 30,
+            status: VisitStatus.completed,
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Next visit'), findsOneWidget);
+      expect(find.text('Last visit'), findsOneWidget);
+      expect(find.text('Open visit'), findsNWidgets(2));
+    },
+  );
 }
 
 Future<void> _pump(
@@ -93,9 +131,7 @@ Future<void> _pump(
           patientVisitQueryRepositoryProvider.overrideWithValue(repository),
           calendarCivilTimeProvider.overrideWithValue(
             AsyncData<CalendarCivilTime>(
-              CalendarCivilTime(
-                doctorTime: DoctorCalendarTime('Asia/Tokyo'),
-              ),
+              CalendarCivilTime(doctorTime: DoctorCalendarTime('Asia/Tokyo')),
             ),
           ),
           if (showErrorState) ...[
@@ -107,9 +143,8 @@ Future<void> _pump(
                 StackTrace.current,
               ),
             ),
-            patientLastCompletedVisitProvider('patient-a').overrideWithValue(
-              const AsyncData<Visit?>(null),
-            ),
+            patientLastCompletedVisitProvider('patient-a')
+                .overrideWithValue(const AsyncData<Visit?>(null)),
           ],
         ],
         child: const _TestApp(),
@@ -127,19 +162,19 @@ class _TestApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        locale: context.locale,
-        supportedLocales: context.supportedLocales,
-        localizationsDelegates: context.localizationDelegates,
-        theme: LumenoTheme.light,
-        home: const Scaffold(
-          body: SingleChildScrollView(
-            child: PatientVisitSummaryCards(
-              patientId: 'patient-a',
-              canOpenDetails: true,
-            ),
-          ),
+    locale: context.locale,
+    supportedLocales: context.supportedLocales,
+    localizationsDelegates: context.localizationDelegates,
+    theme: LumenoTheme.light,
+    home: const Scaffold(
+      body: SingleChildScrollView(
+        child: PatientVisitSummaryCards(
+          patientId: 'patient-a',
+          canOpenDetails: true,
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _FakePatientVisits implements PatientVisitQueryRepository {
