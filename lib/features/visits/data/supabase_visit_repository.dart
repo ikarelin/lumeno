@@ -54,8 +54,8 @@ class SupabaseVisitRepository
         .eq('patient_id', id)
         .eq('status', VisitStatus.scheduled.name)
         .gte('starts_at', from.toUtc().toIso8601String())
-        .order('starts_at')
-        .order('id')
+        .order('starts_at', ascending: true)
+        .order('id', ascending: true)
         .limit(1)
         .maybeSingle();
     return row == null ? null : _mapVisit(row);
