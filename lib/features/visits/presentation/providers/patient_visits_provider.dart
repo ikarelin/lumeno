@@ -11,32 +11,31 @@ final patientVisitNowProvider = Provider<DateTime Function()>((ref) {
   return () => DateTime.now().toUtc();
 });
 
-final patientNextVisitProvider =
-    FutureProvider.autoDispose.family<Visit?, String>((ref, patientId) {
-  final repository = ref.watch(patientVisitQueryRepositoryProvider);
-  final from = ref.watch(patientVisitNowProvider)();
-  return repository.fetchNextPatientVisit(patientId: patientId, from: from);
-});
+final patientNextVisitProvider = FutureProvider.autoDispose
+    .family<Visit?, String>((ref, patientId) {
+      final repository = ref.watch(patientVisitQueryRepositoryProvider);
+      final from = ref.watch(patientVisitNowProvider)();
+      return repository.fetchNextPatientVisit(patientId: patientId, from: from);
+    });
 
-final patientLastCompletedVisitProvider =
-    FutureProvider.autoDispose.family<Visit?, String>((ref, patientId) {
-  final repository = ref.watch(patientVisitQueryRepositoryProvider);
-  final before = ref.watch(patientVisitNowProvider)();
-  return repository.fetchLastCompletedPatientVisit(
-    patientId: patientId,
-    before: before,
-  );
-});
+final patientLastVisitProvider = FutureProvider.autoDispose
+    .family<Visit?, String>((ref, patientId) {
+      final repository = ref.watch(patientVisitQueryRepositoryProvider);
+      final before = ref.watch(patientVisitNowProvider)();
+      return repository.fetchLastPatientVisit(
+        patientId: patientId,
+        before: before,
+      );
+    });
 
 /// Page size is fixed for the first UI slice; the repository supports 1..100.
-final patientVisitsPageProvider =
-    FutureProvider.autoDispose.family<List<Visit>, PatientVisitsPageKey>((
-  ref,
-  key,
-) {
-  return ref.watch(patientVisitQueryRepositoryProvider).fetchPatientVisitsPage(
-        patientId: key.patientId,
-        offset: key.offset,
-        pageSize: 30,
-      );
-});
+final patientVisitsPageProvider = FutureProvider.autoDispose
+    .family<List<Visit>, PatientVisitsPageKey>((ref, key) {
+      return ref
+          .watch(patientVisitQueryRepositoryProvider)
+          .fetchPatientVisitsPage(
+            patientId: key.patientId,
+            offset: key.offset,
+            pageSize: 30,
+          );
+    });

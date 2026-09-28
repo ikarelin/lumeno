@@ -62,7 +62,7 @@ class SupabaseVisitRepository
   }
 
   @override
-  Future<Visit?> fetchLastCompletedPatientVisit({
+  Future<Visit?> fetchLastPatientVisit({
     required String patientId,
     required DateTime before,
   }) async {
@@ -73,8 +73,9 @@ class SupabaseVisitRepository
         .select(_visitColumns)
         .eq('doctor_user_id', user.id)
         .eq('patient_id', id)
-        .eq('status', VisitStatus.completed.name)
-        .lt('starts_at', before.toUtc().toIso8601String())
+        .neq('status', VisitStatus.cancelled.name)
+        .lte('ends_at', before.toUtc().toIso8601String())
+        .order('ends_at', ascending: false)
         .order('starts_at', ascending: false)
         .order('id', ascending: false)
         .limit(1)

@@ -8,35 +8,46 @@ import 'package:lumeno/features/visits/presentation/providers/visit_provider.dar
 void main() {
   final instant = DateTime.utc(2026, 9, 21, 11, 30);
 
-  test('next and last queries use the selected patient and UTC instant', () async {
-    final fake = _FakePatientVisitQueryRepository();
-    final container = ProviderContainer(overrides: [
-      patientVisitQueryRepositoryProvider.overrideWithValue(fake),
-      patientVisitNowProvider.overrideWithValue(() => instant),
-    ]);
-    addTearDown(container.dispose);
+  test(
+    'next and last queries use the selected patient and UTC instant',
+    () async {
+      final fake = _FakePatientVisitQueryRepository();
+      final container = ProviderContainer(
+        overrides: [
+          patientVisitQueryRepositoryProvider.overrideWithValue(fake),
+          patientVisitNowProvider.overrideWithValue(() => instant),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    expect(await container.read(patientNextVisitProvider('patient-a').future),
-        isNull);
-    expect(await container.read(
-        patientLastCompletedVisitProvider('patient-a').future), isNull);
-    expect(fake.nextPatientId, 'patient-a');
-    expect(fake.lastPatientId, 'patient-a');
-    expect(fake.nextFrom, instant);
-    expect(fake.lastBefore, instant);
-    expect(fake.nextFrom!.isUtc, isTrue);
-  });
+      expect(
+        await container.read(patientNextVisitProvider('patient-a').future),
+        isNull,
+      );
+      expect(
+        await container.read(patientLastVisitProvider('patient-a').future),
+        isNull,
+      );
+      expect(fake.nextPatientId, 'patient-a');
+      expect(fake.lastPatientId, 'patient-a');
+      expect(fake.nextFrom, instant);
+      expect(fake.lastBefore, instant);
+      expect(fake.nextFrom!.isUtc, isTrue);
+    },
+  );
 
   test('page provider scopes to patient and forwards its offset', () async {
     final fake = _FakePatientVisitQueryRepository();
-    final container = ProviderContainer(overrides: [
-      patientVisitQueryRepositoryProvider.overrideWithValue(fake),
-    ]);
+    final container = ProviderContainer(
+      overrides: [patientVisitQueryRepositoryProvider.overrideWithValue(fake)],
+    );
     addTearDown(container.dispose);
 
     final key = (patientId: 'patient-b', offset: 60);
-    expect(await container.read(patientVisitsPageProvider(key).future),
-        isEmpty);
+    expect(
+      await container.read(patientVisitsPageProvider(key).future),
+      isEmpty,
+    );
     expect(fake.pagePatientId, 'patient-b');
     expect(fake.pageOffset, 60);
     expect(fake.pageSize, 30);
@@ -71,7 +82,7 @@ class _FakePatientVisitQueryRepository implements PatientVisitQueryRepository {
   }
 
   @override
-  Future<Visit?> fetchLastCompletedPatientVisit({
+  Future<Visit?> fetchLastPatientVisit({
     required String patientId,
     required DateTime before,
   }) async {

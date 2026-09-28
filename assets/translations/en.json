@@ -352,7 +352,7 @@
     "next": "Next visit",
     "last": "Last visit",
     "noUpcoming": "No upcoming visits",
-    "noCompleted": "No completed visits yet",
+    "noPrevious": "No previous visits yet",
     "scheduled": "Scheduled",
     "completed": "Completed",
     "loadFailed": "Could not load this visit.",

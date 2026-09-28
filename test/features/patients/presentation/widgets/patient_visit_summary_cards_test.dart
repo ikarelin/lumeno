@@ -46,7 +46,7 @@ void main() {
             clinicId: 'clinic-1',
             startsAt: DateTime(2026, 9, 12, 11),
             durationMinutes: 30,
-            status: VisitStatus.completed,
+            status: VisitStatus.scheduled,
             note: '  ',
           ),
         ),
@@ -72,7 +72,7 @@ void main() {
       await _pump(tester, _FakePatientVisits(), showErrorState: true);
       expect(find.byType(PatientVisitSummaryCards), findsOneWidget);
       expect(find.text('Could not load this visit.'), findsOneWidget);
-      expect(find.text('No completed visits yet'), findsOneWidget);
+      expect(find.text('No previous visits yet'), findsOneWidget);
       expect(find.text('Open visit'), findsNothing);
 
       // Reuse the same testWidgets so EasyLocalization stays initialized, while
@@ -95,7 +95,7 @@ void main() {
             clinicId: 'clinic-1',
             startsAt: DateTime.utc(2026, 9, 20),
             durationMinutes: 30,
-            status: VisitStatus.completed,
+            status: VisitStatus.scheduled,
           ),
         ),
       );
@@ -143,7 +143,7 @@ Future<void> _pump(
                 StackTrace.current,
               ),
             ),
-            patientLastCompletedVisitProvider('patient-a')
+            patientLastVisitProvider('patient-a')
                 .overrideWithValue(const AsyncData<Visit?>(null)),
           ],
         ],
@@ -192,7 +192,7 @@ class _FakePatientVisits implements PatientVisitQueryRepository {
   }
 
   @override
-  Future<Visit?> fetchLastCompletedPatientVisit({
+  Future<Visit?> fetchLastPatientVisit({
     required String patientId,
     required DateTime before,
   }) async => last;

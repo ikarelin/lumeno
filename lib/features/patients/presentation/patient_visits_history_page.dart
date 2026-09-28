@@ -35,7 +35,8 @@ class PatientVisitsHistoryPage extends ConsumerWidget {
       body: SafeArea(
         child: patientState.when(
           skipLoadingOnRefresh: false,
-          loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+          loading: () =>
+              const Center(child: CircularProgressIndicator.adaptive()),
           error: (_, _) => _HistoryMessage(
             message: 'patients.loadFailed'.tr(),
             onBack: () => _back(context, patientId),
@@ -81,7 +82,8 @@ class _PatientVisitsHistoryContentState
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop;
+    final isDesktop =
+        MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop;
     final calendarTimeState = ref.watch(calendarCivilTimeProvider);
 
     // Watch each requested page in sequence. The provider owns the repository
@@ -91,10 +93,7 @@ class _PatientVisitsHistoryContentState
     AsyncValue<List<Visit>>? pendingState;
     var canLoadMore = false;
     for (var pageIndex = 0; pageIndex < _requestedPages; pageIndex++) {
-      final key = (
-        patientId: widget.patient.id,
-        offset: pageIndex * _pageSize,
-      );
+      final key = (patientId: widget.patient.id, offset: pageIndex * _pageSize);
       final page = ref.watch(patientVisitsPageProvider(key));
       if (page.isLoading || page.hasError || !page.hasValue) {
         pendingKey = key;
@@ -132,7 +131,9 @@ class _PatientVisitsHistoryContentState
                     ? const Center(child: CircularProgressIndicator.adaptive())
                     : _statusCard(
                         'patientVisitHistory.loadFailed'.tr(),
-                        () => ref.invalidate(patientVisitsPageProvider(pendingKey!)),
+                        () => ref.invalidate(
+                          patientVisitsPageProvider(pendingKey!),
+                        ),
                       )
               else if (visits.isEmpty)
                 AppCard(
@@ -157,11 +158,15 @@ class _PatientVisitsHistoryContentState
                   pendingState.isLoading
                       ? const Padding(
                           padding: EdgeInsets.all(AppSpacing.md),
-                          child: Center(child: CircularProgressIndicator.adaptive()),
+                          child: Center(
+                            child: CircularProgressIndicator.adaptive(),
+                          ),
                         )
                       : _statusCard(
                           'patientVisitHistory.loadMoreFailed'.tr(),
-                          () => ref.invalidate(patientVisitsPageProvider(pendingKey!)),
+                          () => ref.invalidate(
+                            patientVisitsPageProvider(pendingKey!),
+                          ),
                         )
                 else if (canLoadMore)
                   Align(
@@ -188,17 +193,23 @@ class _PatientVisitsHistoryContentState
       children: [
         Text(
           'patients.workspace'.tr(),
-          style: AppTextStyles.bodyMedium.copyWith(color: colors.onSurfaceVariant),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           'patientVisitHistory.title'.tr(),
-          style: isDesktop ? AppTextStyles.headlineLarge : AppTextStyles.headlineMedium,
+          style: isDesktop
+              ? AppTextStyles.headlineLarge
+              : AppTextStyles.headlineMedium,
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           widget.patient.name,
-          style: AppTextStyles.bodyMedium.copyWith(color: colors.onSurfaceVariant),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -244,27 +255,29 @@ class _PatientVisitsHistoryContentState
   }
 
   Widget _statusCard(String message, VoidCallback retry) => AppCard(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(message, style: AppTextStyles.bodyMedium),
-            const SizedBox(height: AppSpacing.md),
-            AppButton.secondary(label: 'patients.retry'.tr(), onPressed: retry),
-          ],
-        ),
-      );
+    padding: const EdgeInsets.all(AppSpacing.lg),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(message, style: AppTextStyles.bodyMedium),
+        const SizedBox(height: AppSpacing.md),
+        AppButton.secondary(label: 'patients.retry'.tr(), onPressed: retry),
+      ],
+    ),
+  );
 
   void _refreshVisits() {
     for (var pageIndex = 0; pageIndex < _requestedPages; pageIndex++) {
-      ref.invalidate(patientVisitsPageProvider((
-        patientId: widget.patient.id,
-        offset: pageIndex * _pageSize,
-      )));
+      ref.invalidate(
+        patientVisitsPageProvider((
+          patientId: widget.patient.id,
+          offset: pageIndex * _pageSize,
+        )),
+      );
     }
     ref
       ..invalidate(patientNextVisitProvider(widget.patient.id))
-      ..invalidate(patientLastCompletedVisitProvider(widget.patient.id));
+      ..invalidate(patientLastVisitProvider(widget.patient.id));
     setState(() => _requestedPages = 1);
   }
 
@@ -339,9 +352,12 @@ class _VisitHistoryRow extends StatelessWidget {
       VisitStatus.completed => colors.tertiary,
       VisitStatus.cancelled => colors.onSurfaceVariant,
     };
-    final date = DateFormat('d MMMM y', context.locale.toLanguageTag())
-        .format(calendarTime.displayInstant(visit.startsAt));
-    final time = '${calendarTime.clockLabel(visit.startsAt)}–'
+    final date = DateFormat(
+      'd MMMM y',
+      context.locale.toLanguageTag(),
+    ).format(calendarTime.displayInstant(visit.startsAt));
+    final time =
+        '${calendarTime.clockLabel(visit.startsAt)}–'
         '${calendarTime.clockLabel(visit.endsAt)}';
     final note = visit.note.trim();
 
@@ -393,7 +409,11 @@ class _VisitHistoryRow extends StatelessWidget {
                 style: AppTextStyles.bodyMedium.copyWith(color: colors.primary),
               ),
               const SizedBox(width: AppSpacing.xs),
-              Icon(Icons.arrow_forward_rounded, size: 18, color: colors.primary),
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: 18,
+                color: colors.primary,
+              ),
             ],
           ),
         ],
@@ -415,24 +435,21 @@ class _HistoryMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            IconButton(
-              onPressed: onBack,
-              icon: const Icon(Icons.arrow_back_rounded),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(message, style: AppTextStyles.titleLarge),
-            if (onRetry != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              AppButton.secondary(
-                label: 'patients.retry'.tr(),
-                onPressed: onRetry,
-              ),
-            ],
-          ],
+    padding: const EdgeInsets.all(AppSpacing.lg),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        IconButton(
+          onPressed: onBack,
+          icon: const Icon(Icons.arrow_back_rounded),
         ),
-      );
+        const SizedBox(height: AppSpacing.lg),
+        Text(message, style: AppTextStyles.titleLarge),
+        if (onRetry != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          AppButton.secondary(label: 'patients.retry'.tr(), onPressed: onRetry),
+        ],
+      ],
+    ),
+  );
 }

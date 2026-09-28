@@ -30,8 +30,11 @@ abstract interface class PatientVisitQueryRepository {
     required DateTime from,
   });
 
-  /// Latest explicitly completed Visit whose start precedes [before].
-  Future<Visit?> fetchLastCompletedPatientVisit({
+  /// Latest non-cancelled Visit that has ended at or before [before].
+  ///
+  /// Visit lifecycle is derived from the absolute end instant here rather than
+  /// requiring a persisted `completed` status.
+  Future<Visit?> fetchLastPatientVisit({
     required String patientId,
     required DateTime before,
   });

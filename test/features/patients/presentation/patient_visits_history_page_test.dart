@@ -25,15 +25,23 @@ void main() {
   // Keep the EasyLocalization ancestor mounted across the four scenarios.
   // Reconstructing it in consecutive testWidgets may finish settling before
   // its asset-loading future builds the localized page on some Flutter runs.
-  testWidgets('history: content, pagination, failure and empty state',
-      (tester) async {
+  testWidgets('history: content, pagination, failure and empty state', (
+    tester,
+  ) async {
     final withVisits = _FakeVisitHistoryRepository([
-      _visit('scheduled', VisitStatus.scheduled,
-          DateTime.utc(2026, 9, 22), 'Check lab results'),
-      _visit('completed', VisitStatus.completed,
-          DateTime.utc(2026, 9, 20), ''),
-      _visit('cancelled', VisitStatus.cancelled,
-          DateTime.utc(2026, 9, 19), '  '),
+      _visit(
+        'scheduled',
+        VisitStatus.scheduled,
+        DateTime.utc(2026, 9, 22),
+        'Check lab results',
+      ),
+      _visit('completed', VisitStatus.completed, DateTime.utc(2026, 9, 20), ''),
+      _visit(
+        'cancelled',
+        VisitStatus.cancelled,
+        DateTime.utc(2026, 9, 19),
+        '  ',
+      ),
     ]);
     await _pump(tester, withVisits, scenario: 'data');
     expect(withVisits.requestedPatientIds, everyElement('patient-a'));
@@ -145,12 +153,12 @@ class _TestApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        locale: context.locale,
-        supportedLocales: context.supportedLocales,
-        localizationsDelegates: context.localizationDelegates,
-        theme: LumenoTheme.light,
-        home: const PatientVisitsHistoryPage(patientId: 'patient-a'),
-      );
+    locale: context.locale,
+    supportedLocales: context.supportedLocales,
+    localizationsDelegates: context.localizationDelegates,
+    theme: LumenoTheme.light,
+    home: const PatientVisitsHistoryPage(patientId: 'patient-a'),
+  );
 }
 
 class _FakeVisitHistoryRepository implements PatientVisitQueryRepository {
@@ -183,7 +191,7 @@ class _FakeVisitHistoryRepository implements PatientVisitQueryRepository {
   }) async => null;
 
   @override
-  Future<Visit?> fetchLastCompletedPatientVisit({
+  Future<Visit?> fetchLastPatientVisit({
     required String patientId,
     required DateTime before,
   }) async => null;

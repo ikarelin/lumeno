@@ -28,7 +28,7 @@ class PatientVisitSummaryCards extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final next = ref.watch(patientNextVisitProvider(patientId));
-    final last = ref.watch(patientLastCompletedVisitProvider(patientId));
+    final last = ref.watch(patientLastVisitProvider(patientId));
     final calendarTimeState = ref.watch(calendarCivilTimeProvider);
     final isDesktop =
         MediaQuery.sizeOf(context).width >= AppBreakpoints.desktop;
@@ -50,10 +50,9 @@ class PatientVisitSummaryCards extends ConsumerWidget {
       icon: Icons.history_rounded,
       state: last,
       calendarTimeState: calendarTimeState,
-      emptyLabel: 'patientVisitSummary.noCompleted'.tr(),
+      emptyLabel: 'patientVisitSummary.noPrevious'.tr(),
       canOpenDetails: canOpenDetails,
-      onRetry: () =>
-          ref.invalidate(patientLastCompletedVisitProvider(patientId)),
+      onRetry: () => ref.invalidate(patientLastVisitProvider(patientId)),
       onTimeRetry: () => ref.invalidate(calendarCivilTimeProvider),
       onOpen: (visit, calendarTime) =>
           _openDetails(context, ref, visit, isDesktop, calendarTime),
@@ -100,7 +99,7 @@ class PatientVisitSummaryCards extends ConsumerWidget {
 
     ref
       ..invalidate(patientNextVisitProvider(patientId))
-      ..invalidate(patientLastCompletedVisitProvider(patientId));
+      ..invalidate(patientLastVisitProvider(patientId));
   }
 }
 

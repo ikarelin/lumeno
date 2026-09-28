@@ -60,9 +60,7 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
 
       calendarTime.complete(
-        CalendarCivilTime(
-          doctorTime: DoctorCalendarTime('Asia/Tokyo'),
-        ),
+        CalendarCivilTime(doctorTime: DoctorCalendarTime('Asia/Tokyo')),
       );
       await tester.pumpAndSettle();
 
@@ -73,9 +71,7 @@ void main() {
 
       final retryNotes = _FakeClinicalNoteRepository(
         notesByPatient: {
-          'patient-a': [
-            _note(patientId: 'patient-a', visitId: 'visit-a'),
-          ],
+          'patient-a': [_note(patientId: 'patient-a', visitId: 'visit-a')],
         },
       );
       final retryVisits = _FakePatientVisitRepository(
@@ -110,12 +106,8 @@ void main() {
 
       final patientNotes = _FakeClinicalNoteRepository(
         notesByPatient: {
-          'patient-a': [
-            _note(patientId: 'patient-a', visitId: 'shared-visit'),
-          ],
-          'patient-b': [
-            _note(patientId: 'patient-b', visitId: 'shared-visit'),
-          ],
+          'patient-a': [_note(patientId: 'patient-a', visitId: 'shared-visit')],
+          'patient-b': [_note(patientId: 'patient-b', visitId: 'shared-visit')],
         },
       );
       final patientVisits = _FakePatientVisitRepository(
@@ -155,37 +147,34 @@ void main() {
   );
 }
 
-Future<CalendarCivilTime> _tokyoTime() async => CalendarCivilTime(
-      doctorTime: DoctorCalendarTime('Asia/Tokyo'),
-    );
+Future<CalendarCivilTime> _tokyoTime() async =>
+    CalendarCivilTime(doctorTime: DoctorCalendarTime('Asia/Tokyo'));
 
 PatientClinicalNote _note({
   required String patientId,
   required String visitId,
-}) =>
-    PatientClinicalNote(
-      id: 'note-$patientId',
-      patientId: patientId,
-      visitId: visitId,
-      authorUserId: 'doctor-a',
-      body: 'Clinical note',
-      createdAt: DateTime.utc(2026, 9, 22, 12),
-    );
+}) => PatientClinicalNote(
+  id: 'note-$patientId',
+  patientId: patientId,
+  visitId: visitId,
+  authorUserId: 'doctor-a',
+  body: 'Clinical note',
+  createdAt: DateTime.utc(2026, 9, 22, 12),
+);
 
 Visit _visit({
   required String id,
   required String patientId,
   required DateTime startsAt,
-}) =>
-    Visit(
-      id: id,
-      patientId: patientId,
-      clinicId: 'clinic-a',
-      startsAt: startsAt,
-      durationMinutes: 30,
-      status: VisitStatus.completed,
-      note: '',
-    );
+}) => Visit(
+  id: id,
+  patientId: patientId,
+  clinicId: 'clinic-a',
+  startsAt: startsAt,
+  durationMinutes: 30,
+  status: VisitStatus.completed,
+  note: '',
+);
 
 Future<void> _pumpSection(
   WidgetTester tester, {
@@ -213,9 +202,7 @@ Future<void> _pumpSection(
         overrides: [
           patientClinicalNoteRepositoryProvider.overrideWithValue(notes),
           patientVisitQueryRepositoryProvider.overrideWithValue(visits),
-          calendarCivilTimeProvider.overrideWith(
-            (ref) => calendarTimeLoader(),
-          ),
+          calendarCivilTimeProvider.overrideWith((ref) => calendarTimeLoader()),
         ],
         child: _TestApp(patientId: patientId),
       ),
@@ -233,17 +220,17 @@ class _TestApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        locale: context.locale,
-        supportedLocales: context.supportedLocales,
-        localizationsDelegates: context.localizationDelegates,
-        home: Scaffold(
-          body: PatientClinicalNotesSection(
-            key: const ValueKey('clinical-notes-section'),
-            patientId: patientId,
-            enabled: true,
-          ),
-        ),
-      );
+    locale: context.locale,
+    supportedLocales: context.supportedLocales,
+    localizationsDelegates: context.localizationDelegates,
+    home: Scaffold(
+      body: PatientClinicalNotesSection(
+        key: const ValueKey('clinical-notes-section'),
+        patientId: patientId,
+        enabled: true,
+      ),
+    ),
+  );
 }
 
 class _FakeClinicalNoteRepository implements PatientClinicalNoteRepository {
@@ -279,9 +266,7 @@ class _FakeClinicalNoteRepository implements PatientClinicalNoteRepository {
   }
 
   @override
-  Future<PatientClinicalNote> create(
-    CreatePatientClinicalNoteInput input,
-  ) {
+  Future<PatientClinicalNote> create(CreatePatientClinicalNoteInput input) {
     throw UnimplementedError();
   }
 }
@@ -317,13 +302,11 @@ class _FakePatientVisitRepository implements PatientVisitQueryRepository {
   Future<Visit?> fetchNextPatientVisit({
     required String patientId,
     required DateTime from,
-  }) async =>
-      null;
+  }) async => null;
 
   @override
-  Future<Visit?> fetchLastCompletedPatientVisit({
+  Future<Visit?> fetchLastPatientVisit({
     required String patientId,
     required DateTime before,
-  }) async =>
-      null;
+  }) async => null;
 }
