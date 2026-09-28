@@ -7,6 +7,7 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/app_popup_menu.dart';
 import '../../../clinics/domain/clinic.dart';
 import '../../../clinics/domain/clinic_membership.dart';
 import '../../../clinics/domain/update_clinic_input.dart';
@@ -382,7 +383,7 @@ class _ClinicRow extends StatelessWidget {
             ),
           ] else ...[
             const SizedBox(width: AppSpacing.xs),
-            PopupMenuButton<_ClinicAction>(
+            AppPopupMenu<_ClinicAction>(
               enabled: !isInteractionDisabled,
               tooltip: MaterialLocalizations.of(context).showMenuTooltip,
               onSelected: (action) {
@@ -397,48 +398,26 @@ class _ClinicRow extends StatelessWidget {
               },
               itemBuilder: (context) {
                 return <PopupMenuEntry<_ClinicAction>>[
-                  PopupMenuItem<_ClinicAction>(
+                  AppPopupMenuItem<_ClinicAction>(
                     value: _ClinicAction.edit,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.edit_outlined, size: 20),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text('clinicManagement.editClinic'.tr()),
-                      ],
-                    ),
+                    label: 'clinicManagement.editClinic'.tr(),
+                    icon: Icons.edit_outlined,
                   ),
                   if (canSetDefault)
-                    PopupMenuItem<_ClinicAction>(
+                    AppPopupMenuItem<_ClinicAction>(
                       value: _ClinicAction.setDefault,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.star_outline_rounded, size: 20),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text('profile.setDefaultClinic'.tr()),
-                        ],
-                      ),
+                      label: 'profile.setDefaultClinic'.tr(),
+                      icon: Icons.star_outline_rounded,
                     ),
                   const PopupMenuDivider(),
-                  PopupMenuItem<_ClinicAction>(
+                  AppPopupMenuItem<_ClinicAction>(
                     value: _ClinicAction.delete,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline_rounded,
-                          size: 20,
-                          color: colorScheme.error,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text(
-                          'clinicManagement.deleteClinic'.tr(),
-                          style: TextStyle(color: colorScheme.error),
-                        ),
-                      ],
-                    ),
+                    label: 'clinicManagement.deleteClinic'.tr(),
+                    icon: Icons.delete_outline_rounded,
+                    foregroundColor: colorScheme.error,
                   ),
                 ];
               },
-              icon: const Icon(Icons.more_vert_rounded),
             ),
           ],
         ],

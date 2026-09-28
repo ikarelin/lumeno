@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_text_styles.dart';
+import 'app_popup_menu.dart';
 
 class AppLanguageSelector extends StatelessWidget {
   const AppLanguageSelector({super.key});
@@ -15,9 +16,18 @@ class AppLanguageSelector extends StatelessWidget {
     final locale = context.locale;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      onTap: () => _showLanguageMenu(context),
+    return AppPopupMenu<Locale>(
+      onSelected: (selectedLocale) async {
+        await context.setLocale(selectedLocale);
+      },
+      itemBuilder: (context) {
+        return _languages.map((locale) {
+          return AppPopupMenuItem<Locale>(
+            value: locale,
+            label: _languageName(locale),
+          );
+        }).toList();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -44,35 +54,6 @@ class AppLanguageSelector extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _showLanguageMenu(BuildContext context) async {
-    final renderBox = context.findRenderObject() as RenderBox;
-    final position = renderBox.localToGlobal(Offset.zero);
-
-    final selectedLocale = await showMenu<Locale>(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        position.dx,
-        position.dy + renderBox.size.height,
-        position.dx + renderBox.size.width,
-        0,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      color: Theme.of(context).colorScheme.surface,
-      items: _languages.map((locale) {
-        return PopupMenuItem<Locale>(
-          value: locale,
-          child: Text(_languageName(locale), style: AppTextStyles.bodyMedium),
-        );
-      }).toList(),
-    );
-
-    if (selectedLocale != null && context.mounted) {
-      await context.setLocale(selectedLocale);
-    }
   }
 
   String _languageName(Locale locale) {

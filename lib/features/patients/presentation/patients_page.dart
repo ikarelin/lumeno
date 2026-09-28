@@ -9,6 +9,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_popup_menu.dart';
 import '../../../shared/widgets/at_a_glance_card.dart';
 import '../../quick_create/domain/quick_create_context.dart';
 import '../../quick_create/domain/quick_create_intent.dart';
@@ -919,7 +920,7 @@ class _PatientOverflowMenu extends StatelessWidget {
       );
     }
 
-    return PopupMenuButton<_PatientAction>(
+    return AppPopupMenu<_PatientAction>(
       enabled: enabled,
       tooltip: MaterialLocalizations.of(context).showMenuTooltip,
       onSelected: (action) {
@@ -930,26 +931,14 @@ class _PatientOverflowMenu extends StatelessWidget {
       },
       itemBuilder: (context) {
         return [
-          PopupMenuItem<_PatientAction>(
+          AppPopupMenuItem<_PatientAction>(
             value: _PatientAction.archive,
-            child: Row(
-              children: [
-                Icon(
-                  Icons.archive_outlined,
-                  size: 20,
-                  color: colorScheme.error,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'patients.archive'.tr(),
-                  style: TextStyle(color: colorScheme.error),
-                ),
-              ],
-            ),
+            label: 'patients.archive'.tr(),
+            icon: Icons.archive_outlined,
+            foregroundColor: colorScheme.error,
           ),
         ];
       },
-      icon: const Icon(Icons.more_vert_rounded),
     );
   }
 }
