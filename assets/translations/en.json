@@ -202,7 +202,7 @@
     "specialty": "Specialty",
     "timeZone": "Doctor time zone",
     "timeZoneUnset": "Not selected",
-    "timeZoneDescription": "Select the IANA zone for your working schedule. Existing visits keep their original moments. Calendar conversion will be enabled in the next update.",
+    "timeZoneDescription": "Visit times are shown in this time zone. Changing it can change the visible local date or time of existing visits, but their stored UTC instants do not move.",
     "timeZoneSearch": "Search city or IANA zone",
     "cancel": "Cancel",
     "scheduleDefaults": "Schedule defaults",
@@ -283,6 +283,33 @@
     "language": {
       "english": "English",
       "russian": "Русский"
+    },
+    "initialSettings": {
+      "title": "Set up Lumeno",
+      "description": "Choose the basic settings for your account before you create it.",
+      "language": "App language",
+      "timeZone": "Time zone",
+      "timeZoneDetecting": "Detecting device time zone…",
+      "timeZoneChoose": "Choose an IANA time zone",
+      "timeZoneHint": "We suggest your device time zone. You can choose another one if needed.",
+      "timeZoneSearch": "Search city or IANA zone",
+      "storageRegion": "Where should your data be stored?",
+      "russia": {
+        "title": "Russia",
+        "description": "Preferred region for a future Russian account. In the current demo, choosing a region does not yet change where data is stored."
+      },
+      "europe": {
+        "title": "Europe",
+        "description": "Preferred region for a future European account. In the current demo, choosing a region does not yet change where data is stored."
+      },
+      "regionConfirmHint": "Confirm one data region to continue.",
+      "regionBindingNote": "The selected region will be bound to the account. Changing language or time zone does not move data to another server.",
+      "visitTimeTitle": "About visit times",
+      "visitTimeNote": "Visit times are shown in the selected doctor time zone and stored as UTC. You can change the time zone later without moving existing visit instants.",
+      "demoRegionTitle": "Demo environment",
+      "demoRegionNote": "Regional storage is not active yet. This demo uses one test environment and is only for synthetic data, not real patient records.",
+      "continue": "Continue",
+      "confirmTimeZone": "Use this time zone"
     },
     "region": {
       "title": "Select your region",

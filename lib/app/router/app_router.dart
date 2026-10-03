@@ -13,7 +13,7 @@ import '../../features/files/presentation/files_page.dart';
 import '../../features/onboarding/data/supabase_doctor_setup_repository.dart';
 import '../../features/onboarding/presentation/pages/clinic_setup_page.dart';
 import '../../features/onboarding/presentation/pages/doctor_setup_page.dart';
-import '../../features/onboarding/presentation/pages/region_page.dart';
+import '../../features/onboarding/presentation/pages/initial_settings_page.dart';
 import '../../features/onboarding/presentation/pages/welcome_page.dart';
 import '../../features/patients/presentation/patient_workspace_page.dart';
 import '../../features/patients/presentation/patient_visits_history_page.dart';
@@ -60,7 +60,7 @@ final appRouter = GoRouter(
       path: path,
       doctorSetupRequiredRedirectPath: _doctorSetupTarget(state.uri),
       completedDoctorSetupRedirectPath: continuesToClinic
-          ? _clinicSetupTarget(state.uri)
+          ? _clinicSetupTarget()
           : AuthRoutePolicy.dashboardPath,
     );
   },
@@ -73,9 +73,21 @@ final appRouter = GoRouter(
     ),
 
     GoRoute(
-      path: AuthRoutePolicy.regionPath,
+      path: AuthRoutePolicy.initialSettingsPath,
       builder: (context, state) {
-        return const RegionPage();
+        return const InitialSettingsPage();
+      },
+    ),
+
+    GoRoute(
+      path: AuthRoutePolicy.legacyRegionPath,
+      redirect: (context, state) {
+        return Uri(
+          path: AuthRoutePolicy.initialSettingsPath,
+          queryParameters: state.uri.queryParameters.isEmpty
+              ? null
+              : state.uri.queryParameters,
+        ).toString();
       },
     ),
 
@@ -168,10 +180,10 @@ String _doctorSetupTarget(Uri uri) {
     _doctorSetupNextKey: _doctorSetupNextClinic,
   };
 
-  final region = uri.queryParameters['region'];
+  final timeZoneId = uri.queryParameters['timeZoneId'];
 
-  if (region != null && region.isNotEmpty) {
-    queryParameters['region'] = region;
+  if (timeZoneId != null && timeZoneId.isNotEmpty) {
+    queryParameters['timeZoneId'] = timeZoneId;
   }
 
   return Uri(
@@ -180,15 +192,6 @@ String _doctorSetupTarget(Uri uri) {
   ).toString();
 }
 
-String _clinicSetupTarget(Uri uri) {
-  final region = uri.queryParameters['region'];
-
-  if (region == null || region.isEmpty) {
-    return AuthRoutePolicy.clinicSetupPath;
-  }
-
-  return Uri(
-    path: AuthRoutePolicy.clinicSetupPath,
-    queryParameters: {'region': region},
-  ).toString();
+String _clinicSetupTarget() {
+  return AuthRoutePolicy.clinicSetupPath;
 }

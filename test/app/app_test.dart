@@ -8,7 +8,7 @@ import 'package:lumeno/features/auth/presentation/pages/sign_in_page.dart';
 import 'package:lumeno/features/auth/presentation/pages/sign_up_page.dart';
 import 'package:lumeno/features/onboarding/presentation/pages/clinic_setup_page.dart';
 import 'package:lumeno/features/onboarding/presentation/pages/doctor_setup_page.dart';
-import 'package:lumeno/features/onboarding/presentation/pages/region_page.dart';
+import 'package:lumeno/features/onboarding/presentation/pages/initial_settings_page.dart';
 import 'package:lumeno/features/onboarding/presentation/pages/welcome_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -31,7 +31,7 @@ void main() {
 
     // -------------------------------------------------------------------
     // Create account flow
-    // Welcome -> Region -> Sign Up -> Doctor Setup -> Clinic Setup
+    // Welcome -> Initial settings -> Sign Up -> Doctor Setup -> Clinic Setup
     // -------------------------------------------------------------------
 
     expect(find.byType(WelcomePage), findsOneWidget);
@@ -43,39 +43,37 @@ void main() {
     await tester.tap(createAccountButton);
     await tester.pumpAndSettle();
 
-    // Region
-    expect(find.byType(RegionPage), findsOneWidget);
+    // Initial settings
+    expect(find.byType(InitialSettingsPage), findsOneWidget);
 
-    final regionContinueButton = find.byType(FilledButton);
+    final settingsContinueButton = find.byType(FilledButton);
 
-    expect(regionContinueButton, findsOneWidget);
+    expect(settingsContinueButton, findsOneWidget);
 
-    expect(tester.widget<FilledButton>(regionContinueButton).onPressed, isNull);
-
-    final regionOptions = find.byIcon(Icons.circle_outlined);
-
-    expect(regionOptions, findsNWidgets(2));
-
-    await tester.tap(regionOptions.first);
-    await tester.pumpAndSettle();
+    // A valid device time zone is enough to continue. The user can still
+    // open the selector and override it manually.
+    expect(find.text('Europe/Moscow'), findsOneWidget);
+    expect(find.text('Use this time zone'), findsNothing);
+    expect(find.text('Russia'), findsNothing);
+    expect(find.text('Europe'), findsNothing);
 
     expect(
-      tester.widget<FilledButton>(regionContinueButton).onPressed,
+      tester.widget<FilledButton>(settingsContinueButton).onPressed,
       isNotNull,
     );
 
-    await tester.ensureVisible(regionContinueButton);
+    await tester.ensureVisible(settingsContinueButton);
     await tester.pumpAndSettle();
 
-    await tester.tap(regionContinueButton);
+    await tester.tap(settingsContinueButton);
     await tester.pumpAndSettle();
 
     // Sign Up
     expect(find.byType(SignUpPage), findsOneWidget);
 
     expect(
-      router.routeInformationProvider.value.uri.queryParameters['region'],
-      'russia',
+      router.routeInformationProvider.value.uri.queryParameters['timeZoneId'],
+      'Europe/Moscow',
     );
 
     final signUpFields = find.byType(TextFormField);
@@ -100,8 +98,8 @@ void main() {
     expect(find.byType(DoctorSetupPage), findsOneWidget);
 
     expect(
-      router.routeInformationProvider.value.uri.queryParameters['region'],
-      'russia',
+      router.routeInformationProvider.value.uri.queryParameters['timeZoneId'],
+      'Europe/Moscow',
     );
 
     final doctorFields = find.byType(TextFormField);
@@ -122,11 +120,6 @@ void main() {
 
     // Clinic Setup
     expect(find.byType(ClinicSetupPage), findsOneWidget);
-
-    expect(
-      router.routeInformationProvider.value.uri.queryParameters['region'],
-      'russia',
-    );
 
     final clinicContinueButton = find.byType(FilledButton);
 
@@ -177,13 +170,8 @@ void main() {
     await tester.tap(signInEntryButton);
     await tester.pumpAndSettle();
 
-    // Sign In must not require region selection.
+    // Sign In remains independent from Initial Settings.
     expect(find.byType(SignInPage), findsOneWidget);
-
-    expect(
-      router.routeInformationProvider.value.uri.queryParameters['region'],
-      isNull,
-    );
 
     final signInFields = find.byType(TextFormField);
 
@@ -218,9 +206,11 @@ GoRouter _buildTestRouter() {
         },
       ),
       GoRoute(
-        path: '/region',
+        path: '/initial-settings',
         builder: (context, state) {
-          return const RegionPage();
+          return InitialSettingsPage(
+            deviceTimeZoneLoader: () async => 'Europe/Moscow',
+          );
         },
       ),
       GoRoute(

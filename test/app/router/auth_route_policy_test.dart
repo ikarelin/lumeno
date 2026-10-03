@@ -28,7 +28,8 @@ void main() {
       test('allows guest routes', () {
         final paths = [
           AuthRoutePolicy.welcomePath,
-          AuthRoutePolicy.regionPath,
+          AuthRoutePolicy.initialSettingsPath,
+          AuthRoutePolicy.legacyRegionPath,
           AuthRoutePolicy.signUpPath,
           AuthRoutePolicy.signInPath,
         ];
@@ -80,7 +81,8 @@ void main() {
       test('redirects every other route to doctor setup', () {
         final paths = [
           AuthRoutePolicy.welcomePath,
-          AuthRoutePolicy.regionPath,
+          AuthRoutePolicy.initialSettingsPath,
+          AuthRoutePolicy.legacyRegionPath,
           AuthRoutePolicy.signUpPath,
           AuthRoutePolicy.signInPath,
           AuthRoutePolicy.clinicSetupPath,
@@ -117,7 +119,8 @@ void main() {
       test('redirects account-entry routes to dashboard', () {
         final paths = [
           AuthRoutePolicy.welcomePath,
-          AuthRoutePolicy.regionPath,
+          AuthRoutePolicy.initialSettingsPath,
+          AuthRoutePolicy.legacyRegionPath,
           AuthRoutePolicy.signUpPath,
           AuthRoutePolicy.signInPath,
           AuthRoutePolicy.doctorSetupPath,

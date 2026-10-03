@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/domain/auth_user_metadata.dart';
+import '../../scheduling/domain/doctor_calendar_time.dart';
 import '../domain/doctor_setup_repository.dart';
 
 class SupabaseDoctorSetupRepository implements DoctorSetupRepository {
@@ -23,6 +24,13 @@ class SupabaseDoctorSetupRepository implements DoctorSetupRepository {
 
     final trimmedDoctorName = doctorName.trim();
     final trimmedSpecialty = specialty.trim();
+    final metadataTimeZoneId =
+        user.userMetadata?[AuthUserMetadata.doctorTimeZoneIdKey];
+    final doctorTimeZoneId =
+        metadataTimeZoneId is String &&
+            DoctorCalendarTime.availableTimeZoneIds.contains(metadataTimeZoneId)
+        ? metadataTimeZoneId
+        : null;
 
     // doctor_profiles is the canonical source of truth for
     // the doctor's profile data.
@@ -34,6 +42,7 @@ class SupabaseDoctorSetupRepository implements DoctorSetupRepository {
       'user_id': user.id,
       'full_name': trimmedDoctorName,
       'specialty': trimmedSpecialty,
+      'time_zone_id': ?doctorTimeZoneId,
     }, onConflict: 'user_id');
 
     // Auth metadata is temporarily retained because the current

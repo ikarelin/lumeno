@@ -87,7 +87,7 @@ class _FakeAuthRepository implements AuthRepository {
   Future<AuthSignUpStatus> signUp({
     required String email,
     required String password,
-    required String accountRegion,
+    required String doctorTimeZoneId,
   }) {
     throw UnimplementedError();
   }

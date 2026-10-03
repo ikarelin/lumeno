@@ -2,6 +2,7 @@ import 'auth_session_status.dart';
 
 abstract final class AuthUserMetadata {
   static const String accountRegionKey = 'account_region';
+  static const String doctorTimeZoneIdKey = 'doctor_time_zone_id';
   static const String doctorNameKey = 'doctor_name';
   static const String specialtyKey = 'specialty';
   static const String doctorSetupCompletedKey = 'doctor_setup_completed';

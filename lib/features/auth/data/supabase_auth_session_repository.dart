@@ -27,13 +27,13 @@ class SupabaseAuthSessionRepository
   Future<AuthSignUpStatus> signUp({
     required String email,
     required String password,
-    required String accountRegion,
+    required String doctorTimeZoneId,
   }) async {
     final response = await _client.auth.signUp(
       email: email.trim(),
       password: password,
       data: {
-        AuthUserMetadata.accountRegionKey: accountRegion,
+        AuthUserMetadata.doctorTimeZoneIdKey: doctorTimeZoneId,
         AuthUserMetadata.doctorSetupCompletedKey: false,
       },
     );

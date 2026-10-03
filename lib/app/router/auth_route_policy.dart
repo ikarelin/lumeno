@@ -2,7 +2,8 @@ import '../../features/auth/domain/auth_session_status.dart';
 
 abstract final class AuthRoutePolicy {
   static const String welcomePath = '/welcome';
-  static const String regionPath = '/region';
+  static const String initialSettingsPath = '/initial-settings';
+  static const String legacyRegionPath = '/region';
   static const String signUpPath = '/sign-up';
   static const String signInPath = '/sign-in';
   static const String doctorSetupPath = '/doctor-setup';
@@ -46,14 +47,16 @@ abstract final class AuthRoutePolicy {
 
   static bool _isGuestPath(String path) {
     return path == welcomePath ||
-        path == regionPath ||
+        path == initialSettingsPath ||
+        path == legacyRegionPath ||
         path == signUpPath ||
         path == signInPath;
   }
 
   static bool _isAccountEntryPath(String path) {
     return path == welcomePath ||
-        path == regionPath ||
+        path == initialSettingsPath ||
+        path == legacyRegionPath ||
         path == signUpPath ||
         path == signInPath;
   }

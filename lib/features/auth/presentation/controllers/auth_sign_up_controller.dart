@@ -21,7 +21,7 @@ class AuthSignUpController extends ChangeNotifier {
   Future<AuthSignUpStatus?> signUp({
     required String email,
     required String password,
-    required String accountRegion,
+    required String doctorTimeZoneId,
   }) async {
     if (_isSubmitting) {
       return null;
@@ -36,7 +36,7 @@ class AuthSignUpController extends ChangeNotifier {
       return await _repository.signUp(
         email: email,
         password: password,
-        accountRegion: accountRegion,
+        doctorTimeZoneId: doctorTimeZoneId,
       );
     } catch (error, stackTrace) {
       _lastError = error;

@@ -16,7 +16,7 @@ void main() {
       final result = await controller.signUp(
         email: 'doctor@example.com',
         password: 'password123',
-        accountRegion: 'russia',
+        doctorTimeZoneId: 'Europe/Moscow',
       );
 
       expect(result, AuthSignUpStatus.authenticated);
@@ -27,7 +27,7 @@ void main() {
       expect(repository.signUpCalls, 1);
       expect(repository.lastEmail, 'doctor@example.com');
       expect(repository.lastPassword, 'password123');
-      expect(repository.lastAccountRegion, 'russia');
+      expect(repository.lastDoctorTimeZoneId, 'Europe/Moscow');
     });
 
     test('returns email confirmation required result', () async {
@@ -41,7 +41,7 @@ void main() {
       final result = await controller.signUp(
         email: 'doctor@example.com',
         password: 'password123',
-        accountRegion: 'europe-international',
+        doctorTimeZoneId: 'Europe/Paris',
       );
 
       expect(result, AuthSignUpStatus.emailConfirmationRequired);
@@ -61,7 +61,7 @@ void main() {
       final result = await controller.signUp(
         email: 'doctor@example.com',
         password: 'password123',
-        accountRegion: 'russia',
+        doctorTimeZoneId: 'Europe/Moscow',
       );
 
       expect(result, isNull);
@@ -82,7 +82,7 @@ void main() {
       final firstRequest = controller.signUp(
         email: 'doctor@example.com',
         password: 'password123',
-        accountRegion: 'russia',
+        doctorTimeZoneId: 'Europe/Moscow',
       );
 
       expect(controller.isSubmitting, isTrue);
@@ -90,7 +90,7 @@ void main() {
       final secondResult = await controller.signUp(
         email: 'another@example.com',
         password: 'different123',
-        accountRegion: 'europe-international',
+        doctorTimeZoneId: 'Europe/Paris',
       );
 
       expect(secondResult, isNull);
@@ -116,7 +116,7 @@ class _FakeAuthRepository implements AuthRepository {
 
   String? lastEmail;
   String? lastPassword;
-  String? lastAccountRegion;
+  String? lastDoctorTimeZoneId;
 
   @override
   AuthSessionStatus get currentStatus {
@@ -132,13 +132,13 @@ class _FakeAuthRepository implements AuthRepository {
   Future<AuthSignUpStatus> signUp({
     required String email,
     required String password,
-    required String accountRegion,
+    required String doctorTimeZoneId,
   }) {
     signUpCalls += 1;
 
     lastEmail = email;
     lastPassword = password;
-    lastAccountRegion = accountRegion;
+    lastDoctorTimeZoneId = doctorTimeZoneId;
 
     final currentError = error;
 
